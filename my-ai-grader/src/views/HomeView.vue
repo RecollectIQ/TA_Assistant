@@ -9,7 +9,7 @@
       </div>
     </template>
     <el-empty description="暂无更多内容，请选择操作">
-      <el-button type="primary" @click="goToGrading">开始批改</el-button>
+      <el-button type="primary" @click="goToStandardAnswer">开始批改</el-button>
       <el-button @click="goToProfiles">管理题目配置</el-button>
     </el-empty>
 
@@ -58,8 +58,8 @@
 
   const router = useRouter();
 
-  const goToGrading = () => {
-    router.push('/grading');
+  const goToStandardAnswer = () => {
+    router.push('/standard-answer');
   };
 
   const goToProfiles = () => {

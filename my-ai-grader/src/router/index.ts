@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import HomeView from '@/views/HomeView.vue';
 import ProfileManagementView from '@/views/ProfileManagementView.vue';
 import GradingView from '@/views/GradingView.vue';
+import StandardAnswerView from '@/views/StandardAnswerView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -20,6 +21,11 @@ const routes: RouteRecordRaw[] = [
     name: 'Grading',
     component: GradingView,
   },
+  {
+    path: '/standard-answer',
+    name: 'StandardAnswer',
+    component: StandardAnswerView,
+  },
   // Fallback route for 404 - optional for now
   // {
   //   path: '/:catchAll(.*)*',
@@ -34,4 +40,3 @@ const router = createRouter({
 });
 
 export default router;
- 

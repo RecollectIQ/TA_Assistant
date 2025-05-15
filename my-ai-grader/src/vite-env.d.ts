@@ -5,7 +5,11 @@
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue';
-  const component: DefineComponent<{}, {}, any>;
+  const component: DefineComponent<
+    Record<string, never>,
+    Record<string, never>,
+    any
+  >;
   export default component;
 }
 
@@ -17,3 +21,14 @@ declare module 'vite-plugin-eslint' {
 
 // Add declaration for Element Plus locale mjs file
 declare module 'element-plus/dist/locale/zh-cn.mjs';
+
+// Generic module declarations to attempt to satisfy linter for common JS modules
+declare module 'pinia' {
+  export * from 'pinia/dist/pinia'; // Try to point to actual types if possible, or use 'any'
+}
+
+declare module 'axios' {
+  import { AxiosStatic } from 'axios/index';
+  const axios: AxiosStatic;
+  export default axios;
+}

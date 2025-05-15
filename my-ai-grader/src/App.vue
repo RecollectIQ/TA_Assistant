@@ -9,7 +9,7 @@
 
   onMounted(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/greet');
+      const response = await axios.get('/api/greet');
       console.log('Response from backend:', response.data);
     } catch (error: any) {
       console.error('Error calling backend API:', error);

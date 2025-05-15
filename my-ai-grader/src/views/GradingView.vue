@@ -1,6 +1,50 @@
 <template>
   <el-container class="grading-layout">
     <el-main class="image-display-area">
+      <!-- New Card for Standard Answer Context -->
+      <el-card
+        v-if="standardAnswerAnalysis || currentRubric"
+        shadow="never"
+        style="
+          margin-bottom: 20px;
+          border: 1px solid var(--el-color-primary-light-3);
+        "
+      >
+        <template #header>
+          <div class="card-header">
+            <span
+              ><el-icon style="margin-right: 4px"><InfoFilled /></el-icon
+              >评分参考信息</span
+            >
+          </div>
+        </template>
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item
+            v-if="standardAnswerAnalysis"
+            label-style="width: 120px"
+            label="标准答案分析"
+          >
+            <div
+              style="white-space: pre-wrap; max-height: 150px; overflow-y: auto"
+            >
+              {{ standardAnswerAnalysis }}
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="currentRubric"
+            label-style="width: 120px"
+            label="评分细则 (Rubric)"
+          >
+            <div
+              style="white-space: pre-wrap; max-height: 150px; overflow-y: auto"
+            >
+              {{ currentRubric }}
+            </div>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+      <!-- End of New Card -->
+
       <el-card shadow="never" style="height: 100%">
         <template #header>
           <div class="card-header">
@@ -14,7 +58,6 @@
           class="image-uploader"
           action="#"
           :show-file-list="false"
-          :on-success="handleImageSuccess"
           :before-upload="beforeImageUpload"
           :http-request="customImageUpload"
           drag
@@ -28,8 +71,8 @@
           </template>
         </el-upload>
         <el-image
-          v-if="imageUrl"
-          :src="imageUrl"
+          v-if="studentImageUrl"
+          :src="studentImageUrl"
           fit="contain"
           class="uploaded-image-preview"
         />
@@ -47,7 +90,7 @@
             >
           </div>
         </template>
-        <div v-loading="isLoadingGrade" class="results-content">
+        <div v-loading="gradingStore.isLoadingGrading" class="results-content">
           <div class="detailed-feedback">
             <h4>
               <el-icon><ChatDotSquare /></el-icon> 详细反馈
@@ -62,7 +105,9 @@
               <el-empty
                 v-else
                 :description="
-                  isLoadingGrade ? '正在努力分析中，请稍候...' : '暂无详细反馈'
+                  gradingStore.isLoadingGrading
+                    ? '正在努力分析中，请稍候...'
+                    : '暂无详细反馈'
                 "
               />
             </el-scrollbar>
@@ -76,7 +121,7 @@
             </h4>
             <el-button
               type="primary"
-              :disabled="!imageUrl || isLoadingGrade"
+              :disabled="!studentImageUrl || gradingStore.isLoadingGrading"
               @click="handleGradeImage"
               ><el-icon style="margin-right: 4px"><EditPen /></el-icon
               >重新批改</el-button
@@ -94,191 +139,153 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue';
-  import { ElMessage } from 'element-plus';
-  import type {
-    UploadProps,
-    UploadRawFile /*, UploadFile */,
+  import { computed, onMounted } from 'vue';
+  import { useRouter } from 'vue-router';
+  import {
+    ElMessage,
+    ElMessageBox,
+    type UploadRawFile,
+    type UploadRequestOptions,
   } from 'element-plus';
   import {
     UploadFilled,
     List,
     PictureFilled,
-    Memo,
+    InfoFilled,
     ChatDotSquare,
     Tools,
     EditPen,
     Download,
   } from '@element-plus/icons-vue';
   import { useGradingStore } from '@/stores/gradingStore';
-  import axios from 'axios';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
-  import defaultPrompt from '@/config/default_prompt.txt?raw'; // Import the prompt text
 
   const gradingStore = useGradingStore();
+  const router = useRouter();
 
-  const imageUrl = computed(() => gradingStore.imageUrl);
+  const standardAnswerAnalysis = computed(
+    () => gradingStore.analyzedStandardAnswerText,
+  );
+  const currentRubric = computed(() => gradingStore.gradingRubric);
 
-  const detailedFeedbackAvailable = ref(false);
-  const gradingResultText = ref('');
-  const isLoadingGrade = ref(false);
+  const studentImageUrl = computed(() => gradingStore.studentAnswerImageUrl);
 
   const renderedMarkdown = computed(() => {
-    if (detailedFeedbackAvailable.value && gradingResultText.value) {
-      const rawHtml = marked(gradingResultText.value);
+    const markdownText = gradingStore.gradingResult as string | null;
+
+    if (
+      typeof markdownText === 'string' &&
+      markdownText &&
+      !markdownText.startsWith('Error during grading:')
+    ) {
+      const cleanedMarkdown = markdownText.replace(/\\n/g, '\n');
+      const rawHtml = marked(cleanedMarkdown);
       return DOMPurify.sanitize(rawHtml as string);
     }
+
+    if (
+      typeof markdownText === 'string' &&
+      markdownText.startsWith('Error during grading:')
+    ) {
+      const errorHtml = marked(`\`\`\`text\n${markdownText}\n\`\`\``);
+      return DOMPurify.sanitize(errorHtml as string);
+    }
+
+    if (gradingStore.gradingError) {
+      const errorHtml = marked(`批改时发生错误: ${gradingStore.gradingError}`);
+      return DOMPurify.sanitize(errorHtml as string);
+    }
+
     return '';
   });
 
+  const detailedFeedbackAvailable = computed(() => !!renderedMarkdown.value);
+
+  onMounted(() => {
+    if (
+      !gradingStore.analyzedStandardAnswerText ||
+      !gradingStore.gradingRubric
+    ) {
+      ElMessageBox.alert(
+        '请先完成标准答案的上传和分析，并定义评分细则。',
+        '缺少必要信息',
+        {
+          confirmButtonText: '前往设置',
+          type: 'warning',
+          callback: () => {
+            router.push('/standard-answer');
+          },
+        },
+      );
+    }
+  });
+
   const handleGradeImage = async () => {
-    if (!imageUrl.value) {
-      ElMessage.error('请先上传一张图片。');
+    if (!gradingStore.studentAnswerImageUrl) {
+      ElMessage.error('请先上传学生答题图片。');
       return;
     }
-    isLoadingGrade.value = true;
-    gradingResultText.value = '';
-    detailedFeedbackAvailable.value = false;
-
-    const promptText = defaultPrompt; // Use the imported prompt
-
-    try {
-      console.log('Sending to /api/grade (Base64):', {
-        imageDataLength: imageUrl.value?.length, // Log length for brevity
-        prompt: promptText,
-      });
-      const response = await axios.post('http://localhost:5000/api/grade', {
-        imageData: imageUrl.value, // This will now be a base64 data URL
-        prompt: promptText,
-      });
-      console.log('Response from /api/grade:', response.data);
-      if (
-        response.data &&
-        response.data.choices &&
-        response.data.choices[0] &&
-        response.data.choices[0].message
-      ) {
-        const rawContent = response.data.choices[0].message.content;
-        console.log('Raw AI content:', rawContent); // Log raw content for debugging
-        gradingResultText.value = rawContent;
-        detailedFeedbackAvailable.value = true;
-        ElMessage.success('图片批改成功！');
-      } else {
-        ElMessage.error('从后端获取的批改结果格式不正确。');
-        console.error('Unexpected response structure:', response.data);
-        gradingResultText.value = JSON.stringify(response.data, null, 2);
-        detailedFeedbackAvailable.value = true;
-      }
-    } catch (error: any) {
-      console.error('Error calling /api/grade:', error);
-      let errorMessage = '调用批改服务失败。';
-      if (error.response) {
-        console.error('Backend Error Data:', error.response.data);
-        errorMessage += ` 错误: ${error.response.data?.error || error.response.status}`;
-        gradingResultText.value = `错误: ${error.response.data?.error || '未知后端错误'}`;
-      } else if (error.request) {
-        errorMessage += ' 后端无响应。';
-        gradingResultText.value = '错误: 后端服务无响应。';
-      } else {
-        errorMessage += ` ${error.message}`;
-        gradingResultText.value = `错误: ${error.message}`;
-      }
-      ElMessage.error(errorMessage);
-      detailedFeedbackAvailable.value = true;
-    } finally {
-      isLoadingGrade.value = false;
+    if (
+      !gradingStore.analyzedStandardAnswerText ||
+      !gradingStore.gradingRubric
+    ) {
+      ElMessage.error('标准答案分析或评分细则缺失，请返回上一步完成设置。');
+      return;
     }
+
+    console.log(
+      '[GradingView.vue] handleGradeImage: Calling store.gradeStudentAnswer',
+    );
+    await gradingStore.gradeStudentAnswer(
+      gradingStore.studentAnswerImageUrl,
+      gradingStore.gradingRubric,
+      gradingStore.analyzedStandardAnswerText,
+    );
   };
 
-  const customImageUpload = (options: any) => {
-    console.log('Custom upload method called for file:', options.file.name);
-    const rawFile = options.file as UploadRawFile;
-
-    // Validate file type and size again, just in case (though beforeUpload should handle it)
-    if (!['image/jpeg', 'image/png'].includes(rawFile.type)) {
-      ElMessage.error('图片必须是 JPG 或 PNG 格式!');
-      options.onError(new Error('Invalid file type')); // Notify ElUpload of error
-      return;
-    }
-    if (rawFile.size / 1024 / 1024 > 2) {
-      ElMessage.error('图片大小不能超过 2MB!');
-      options.onError(new Error('File too large')); // Notify ElUpload of error
-      return;
-    }
+  const customImageUpload = async (options: UploadRequestOptions) => {
+    const file = options.file as UploadRawFile;
+    console.log(
+      '[GradingView.vue] customImageUpload called for student file:',
+      file.name,
+    );
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Url = e.target?.result as string;
-      gradingStore.setImageUrl(base64Url); // Store base64 URL
-      ElMessage.success('图片上传成功，准备批改。');
-      options.onSuccess({ url: base64Url }, options.file); // Notify ElUpload of success
-
-      // Automatically trigger grading after successful upload and conversion
-      setTimeout(() => {
-        handleGradeImage();
-      }, 0);
-    };
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-      ElMessage.error('图片读取失败!');
-      options.onError(error); // Notify ElUpload of error
-    };
-    reader.readAsDataURL(rawFile); // Read as Base64 Data URL
-  };
-
-  const handleImageSuccess: UploadProps['onSuccess'] = (
-    response, // This will be the { url: base64Url } from customImageUpload's onSuccess
-    uploadFile,
-    // uploadFiles, // No longer needed with single image focus and customImageUpload handling it
-  ) => {
-    // This function might be less critical now customImageUpload handles everything,
-    // but we'll keep it aligned in case ElUpload triggers it differently.
-    console.log(
-      'Image upload success (handleImageSuccess):',
-      response,
-      uploadFile,
-    );
-    let newImageUrl = '';
-    if (response && (response as any).url) {
-      newImageUrl = (response as any).url; // Should be base64 from customImageUpload
-    } else if (uploadFile.url) {
-      // Fallback if ElUpload provides its own URL (e.g. blob from internal processing)
-      newImageUrl = uploadFile.url;
-    }
-    // Ensure store always has the base64 URL if possible
-    // If newImageUrl is a blob, this would be problematic.
-    // However, customImageUpload should ensure it's base64.
-    if (newImageUrl) {
-      gradingStore.setImageUrl(newImageUrl);
-    } else {
-      // If somehow we don't get a URL, try to re-process from raw if available.
-      // This is a fallback, ideally customImageUpload ensures the store is set correctly.
-      if (uploadFile.raw) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          gradingStore.setImageUrl(e.target?.result as string);
-        };
-        reader.readAsDataURL(uploadFile.raw);
+    reader.onload = async (e) => {
+      if (e.target?.result) {
+        const imageDataUrl = e.target.result as string;
+        gradingStore.setStudentAnswerImageUrl(imageDataUrl);
+        console.log(
+          '[GradingView.vue] Image uploaded, now calling handleGradeImage to start grading.',
+        );
+        await handleGradeImage();
+      } else {
+        ElMessage.error('读取学生答题图片失败');
       }
-    }
+    };
+    reader.onerror = () => {
+      ElMessage.error('读取学生答题图片时发生错误');
+    };
+    reader.readAsDataURL(file);
   };
 
-  const beforeImageUpload: UploadProps['beforeUpload'] = (
-    rawFile: UploadRawFile,
-  ) => {
-    if (!['image/jpeg', 'image/png'].includes(rawFile.type)) {
-      ElMessage.error('图片必须是 JPG 或 PNG 格式!');
+  const beforeImageUpload = (rawFile: UploadRawFile): boolean => {
+    const isImage = ['image/jpeg', 'image/png', 'image/gif'].includes(
+      rawFile.type,
+    );
+    const isLt2M = rawFile.size / 1024 / 1024 < 2;
+    if (!isImage) {
+      ElMessage.error('上传图片只能是 JPG/PNG/GIF 格式!');
       return false;
     }
-    if (rawFile.size / 1024 / 1024 > 2) {
-      ElMessage.error('图片大小不能超过 2MB!');
+    if (!isLt2M) {
+      ElMessage.error('上传图片大小不能超过 2MB!');
       return false;
     }
+    gradingStore.setStudentAnswerImageUrl(null);
     return true;
   };
-
-  // Placeholder for future script logic
 </script>
 
 <style scoped>
