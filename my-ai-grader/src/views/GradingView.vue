@@ -80,7 +80,7 @@
         <!-- 图片上传和展示逻辑将在此处实现 (模块 11.3) -->
       </el-card>
     </el-main>
-    <el-aside width="400px" class="results-sidebar">
+    <el-aside width="70%" class="results-sidebar">
       <el-card shadow="never" style="height: 100%">
         <template #header>
           <div class="card-header">
