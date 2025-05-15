@@ -1,0 +1,12 @@
+# Ignore artifacts:
+build
+dist
+coverage
+
+# Ignore lock files:
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore Vite specific files if any that shouldn't be formatted
+.vite 
