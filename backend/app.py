@@ -4,11 +4,13 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import json
 import re # Import re for regex
-from .services.llm_service import call_llm_api, LLMServiceError
+from services.llm_service import call_llm_api, LLMServiceError
 
 load_dotenv()
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False  # 允许非ASCII字符在JSON中
+
 # 使用更明确的 CORS 配置
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 # 或者允许所有源进行测试：
@@ -194,6 +196,51 @@ def analyze_standard_answer():
         import traceback
         traceback.print_exc()
         return jsonify(error=f"An unexpected server error occurred: {str(e)}"), 500
+
+@app.route('/api/test_connection', methods=['POST'])
+def test_connection():
+    """Test API connection with provided credentials."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify(error="No data provided"), 400
+
+        api_url = data.get('apiUrl')
+        api_key = data.get('apiKey')
+        model_name = data.get('modelName')
+
+        if not api_url or not api_key or not model_name:
+            return jsonify(error="Missing required parameters"), 400
+
+        # Test with a simple prompt
+        test_prompt = "Hello, this is a connection test."
+        
+        # Use the provided model instead of hardcoded one
+        ai_result = call_llm_api(
+            api_url=api_url,
+            api_key=api_key,
+            model=model_name,
+            prompt_text=test_prompt,
+            image_data_url=None,  # No image for connection test
+            max_tokens=50
+        )
+
+        # Check if we got a valid response
+        if ai_result and isinstance(ai_result.get('choices'), list) and len(ai_result['choices']) > 0:
+            return jsonify({
+                "success": True,
+                "message": "API connection successful",
+                "model": model_name
+            }), 200
+        else:
+            return jsonify(error="Invalid response format from API"), 500
+
+    except LLMServiceError as e:
+        print(f"Connection test failed: {e.message}")
+        return jsonify(error=e.message), e.status_code if e.status_code else 500
+    except Exception as e:
+        print(f"Connection test error: {e}")
+        return jsonify(error=str(e)), 500
 
 # Explicitly print registered routes for debugging
 # This should be placed after all route definitions and before the app.run() call if __name__ == '__main__'

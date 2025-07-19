@@ -3,7 +3,10 @@ import type { RouteRecordRaw } from 'vue-router';
 import HomeView from '@/views/HomeView.vue';
 import ProfileManagementView from '@/views/ProfileManagementView.vue';
 import GradingView from '@/views/GradingView.vue';
+import ConfigurationView from '@/views/ConfigurationView.vue';
 import StandardAnswerView from '@/views/StandardAnswerView.vue';
+import BatchGradingView from '@/views/BatchGradingView.vue';
+import ResultsView from '@/views/ResultsView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -17,6 +20,11 @@ const routes: RouteRecordRaw[] = [
     component: ProfileManagementView,
   },
   {
+    path: '/configuration',
+    name: 'Configuration',
+    component: ConfigurationView,
+  },
+  {
     path: '/grading',
     name: 'Grading',
     component: GradingView,
@@ -25,6 +33,16 @@ const routes: RouteRecordRaw[] = [
     path: '/standard-answer',
     name: 'StandardAnswer',
     component: StandardAnswerView,
+  },
+  {
+    path: '/batch-grading',
+    name: 'BatchGrading',
+    component: BatchGradingView,
+  },
+  {
+    path: '/results',
+    name: 'Results',
+    component: ResultsView,
   },
   // Fallback route for 404 - optional for now
   // {

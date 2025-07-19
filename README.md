@@ -2,173 +2,277 @@
 
 ## Update Log / Version History
 
-### v0.0.2 (2025-05-15, 20:52 Beijing Time)
+### v0.2.2 (2025-07-19, 部署优化)
 
-- **MVP Achieved**: Completed the end-to-end workflow for AI-assisted grading.
-  - Implemented standard answer analysis: Users can upload a standard answer image, and the AI analyzes it to provide a textual summary and a suggested JSON rubric.
-  - Implemented student answer grading: Users can upload a student's answer image. The AI grades it based on the standard answer analysis and a user-confirmed rubric (context provided in the prompt).
-  - Enhanced feedback display: Grading results from the AI are now presented as a well-formatted Markdown document in the UI.
-- Addressed various frontend Linter/Prettier issues and fixed API call configurations.
-- Updated `PHASE2_CHECKLIST.md` to reflect completed MVP tasks.
+#### 🚀 新功能亮点
+- **一键启动脚本**：新增`start.sh`一键启动前后端服务
+- **部署优化**：简化启动流程，无需手动启动多个服务
+- **端口管理**：自动检查并清理占用端口
+- **用户体验**：统一启动界面，彩色状态输出
 
-AI Grader is a web application designed to assist with grading image-based submissions using AI. It consists of a Vue.js frontend and a Python Flask backend that interfaces with an OpenAI-compatible Vision LLM.
+#### 📋 具体更新内容
+1. **一键启动系统**
+   - 新增`./start.sh`脚本，一键启动前后端
+   - 自动检查依赖安装状态
+   - 智能端口冲突检测和清理
+   - 彩色终端输出，启动状态清晰可视
 
-## Project Structure
+2. **部署流程简化**
+   - 无需手动启动多个终端
+   - 自动激活Python虚拟环境
+   - 自动检测并安装缺失依赖
+   - Ctrl+C统一关闭所有服务
 
-- `my-ai-grader/`: Contains the Vue.js 3 frontend application.
-- `backend/`: Contains the Python Flask backend application.
-- `Instructions.md`: Detailed technical implementation plan (internal document).
-- `Phase2_Checklist.md`: Checklist for the current MVP development phase.
+### v0.2.1 (2025-07-17, 重大功能升级)
 
-## Prerequisites
+#### 🚀 新功能亮点
+- **多图标准答案系统**：支持上传多张标准答案图片，AI智能分析并生成评分标准
+- **批量批改功能**：一次性上传全班作业，自动批量评分并生成报告
+- **结果管理系统**：完整的批改历史记录，支持图表分析和数据导出
+- **配置管理中心**：统一管理API密钥、AI模型选择和高级参数设置
+- **全新用户界面**：3步向导式操作流程，拖拽上传，实时预览
 
-Before you begin, ensure you have the following installed:
+#### 📋 具体更新内容
+1. **多图标准答案分析**
+   - 支持最多10张标准答案图片上传
+   - AI智能分析所有图片内容，生成综合分析报告
+   - 自动生成JSON格式的评分标准
+   - 支持图片拖拽排序
 
-**For Frontend (`my-ai-grader/`):**
+2. **批量学生作业批改**
+   - 支持最多50份学生作业同时上传
+   - 实时进度追踪（进度条显示）
+   - 支持ZIP压缩包批量上传
+   - 自动从文件名提取学生学号
+   - 批量导出CSV/JSON/PDF格式结果
 
-- Node.js (v18.x or later recommended)
-- npm (usually comes with Node.js)
+3. **结果分析与历史管理**
+   - 完整的批改历史数据库
+   - 智能筛选（按日期、学生、成绩范围）
+   - 成绩分布图表可视化
+   - 支持重新批改和结果编辑
+   - 一键导出全班成绩报告
 
-**For Backend (`backend/`):**
+4. **配置管理优化**
+   - 支持OpenAI GPT-4o、Claude 3.5等多种AI模型
+   - API密钥安全加密存储
+   - 实时连接测试功能
+   - 高级参数设置（超时时间、最大token数）
 
-- Python (3.x, check `backend/venv` specifics if needed, e.g., 3.9+)
-- pip (Python package installer)
+### v0.0.2 (2025-05-15, MVP版本)
+- **MVP完成**：实现端到端的AI辅助批改工作流
+- 标准答案分析：上传标准答案图片，AI生成文本分析和建议评分标准
+- 学生作业批改：基于标准答案和评分标准自动评分
+- 增强反馈展示：AI评分结果以Markdown格式展示
 
-## Setup Instructions
+## 🎯 项目简介
+AI Grader是一个基于Web的智能批改系统，使用AI技术自动批改图像格式的学生作业。系统采用Vue.js前端+Python Flask后端架构，支持OpenAI、Claude等多种AI模型。
 
-1.  **Clone the Repository:**
+## 📁 项目结构
 
-    ```bash
-    git clone <your-repository-url>
-    cd AI_Grader # Or your project's root directory name
-    ```
+```
+AI_Grader/
+├── my-ai-grader/          # Vue.js 3前端应用
+│   ├── src/
+│   │   ├── views/        # 页面组件
+│   │   │   ├── ConfigurationView.vue    # 配置管理
+│   │   │   ├── StandardAnswerView.vue   # 标准答案设置
+│   │   │   ├── BatchGradingView.vue     # 批量批改
+│   │   │   ├── ResultsView.vue          # 结果分析
+│   │   │   └── ...
+│   │   ├── components/   # 通用组件
+│   │   │   ├── common/  # 基础组件
+│   │   │   ├── upload/  # 上传组件
+│   │   │   └── layout/  # 布局组件
+│   │   ├── stores/       # Pinia状态管理
+│   │   ├── types/        # TypeScript类型定义
+│   │   └── services/     # API服务层
+├── backend/              # Python Flask后端
+├── .kiro/               # 设计文档和任务清单
+└── README.md
+```
 
-2.  **Setup Frontend (`my-ai-grader/`):**
+## 🛠️ 环境要求
 
-    ```bash
-    cd my-ai-grader
-    npm install
-    cd .. # Return to project root
-    ```
+### 前端要求 (`my-ai-grader/`)：
+- Node.js (v18.x 或更高版本)
+- npm (通常随Node.js一起安装)
 
-3.  **Setup Backend (`backend/`):**
+### 后端要求 (`backend/`)：
+- Python 3.9+
+- pip (Python包管理器)
 
-    ```bash
-    cd backend
-    # Create a Python virtual environment (recommended)
-    python3 -m venv venv # Or python -m venv venv
+## 📦 安装步骤
 
-    # Activate the virtual environment
-    # On macOS/Linux:
-    source venv/bin/activate
-    # On Windows:
-    # venv\Scripts\activate
+### 1. 克隆项目
+```bash
+git clone <your-repository-url>
+cd AI_Grader
+```
 
-    # Install Python dependencies
-    pip install -r requirements.txt
-    # Note: You can deactivate the venv later with `deactivate` command
-    cd .. # Return to project root
-    ```
+### 2. 安装前端依赖
+```bash
+cd my-ai-grader
+npm install
+```
 
-## API Key Configuration (Backend)
+### 3. 安装后端依赖
+```bash
+cd backend
 
-The backend requires an API key and endpoint URL for an OpenAI-compatible Vision LLM to function correctly. This configuration is crucial.
+# 创建Python虚拟环境
+python3 -m venv venv
 
-1.  Navigate to the `backend/` directory:
-    ```bash
-    cd backend
-    ```
-2.  Create a file named `.env` in this directory if it doesn't already exist.
-3.  Add your API credentials to the `.env` file in the following format:
+# 激活虚拟环境
+# macOS/Linux:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
 
-    ```env
-    OPENAI_COMPATIBLE_API_URL="your_llm_api_endpoint_here"
-    OPENAI_COMPATIBLE_API_KEY="your_llm_api_key_here"
-    ```
+# 安装依赖
+pip install -r requirements.txt
+```
 
-    - Replace `your_llm_api_endpoint_here` with the full URL to the chat completions endpoint of your LLM provider (e.g., `https://api.openai.com/v1/chat/completions` or a local proxy like `http://localhost:3100/v1/chat/completions`).
-    - Replace `your_llm_api_key_here` with your actual API key.
-    - **Important**: Ensure this `.env` file is never committed to version control if it contains real secrets.
+### 4. 配置API密钥
+在 `backend/` 目录下创建 `.env` 文件：
 
-4.  **Note on Local LLM Proxy Services**: If `OPENAI_COMPATIBLE_API_URL` points to a local proxy service (e.g., running on `http://localhost:3100`), ensure that this local proxy service is also running, correctly configured, and able to connect to its upstream LLM provider (e.g., OpenAI, Azure OpenAI).
+```env
+OPENAI_COMPATIBLE_API_URL="https://api.openai.com/v1/chat/completions"
+OPENAI_COMPATIBLE_API_KEY="your_api_key_here"
+```
 
-5.  Return to the project root if needed:
-    ```bash
-    cd ..
-    ```
+支持的AI模型：
+- OpenAI GPT-4o
+- OpenAI GPT-4o Mini
+- Claude 3.5 Sonnet
+- Claude 3.5 Haiku
 
-## Running the Application
+## 🚀 启动项目
 
-**You need to run both the frontend and backend servers simultaneously in separate terminal windows/tabs.**
+### 🆕 一键启动（推荐）
+```bash
+./start.sh
+```
+脚本会自动：
+- 检查并安装前后端依赖
+- 启动后端服务（端口5000）
+- 启动前端服务（端口5173）
+- 显示彩色启动状态
+- 按Ctrl+C统一关闭所有服务
 
-1.  **Start the Backend Server:**
+### 手动启动（备用）
 
-    a. Navigate to the `backend/` directory:
-    `bash
-    cd backend
-    `
-    b. Activate the Python virtual environment (if not already active):
-    `bash
-    # On macOS/Linux:
-    source venv/bin/activate
-    # On Windows:
-    # venv\Scripts\activate
-    `
-    c. Ensure your `.env` file in the `backend/` directory is correctly configured with `OPENAI_COMPATIBLE_API_URL` and `OPENAI_COMPATIBLE_API_KEY` (see "API Key Configuration" section).
+#### 启动后端（端口5000）：
+```bash
+cd backend
+source venv/bin/activate  # 激活虚拟环境
+python app.py
+```
 
-    d. Run the Flask application. The `backend/app.py` is configured to run on `0.0.0.0:5000` when executed directly:
-    `bash
-    python app.py
-    `
-    Alternatively, you can use `flask run` (it should pick up the app from `app.py` and also use the `.env` variables, but `python app.py` is more explicit given the `app.run()` configuration in the file):
-    `bash
-    # flask run --host=0.0.0.0 --port=5000 # More explicit if needed
-    flask run 
-    `
-    The backend API will be available at `http://0.0.0.0:5000` (accessible as `http://localhost:5000` or `http://127.0.0.1:5000` from your local machine).
+#### 启动前端（端口5173）：
+```bash
+cd my-ai-grader
+npm run dev
+```
 
-2.  **Start the Frontend Development Server:**
+访问地址：
+- 前端：http://localhost:5173
+- 后端：http://localhost:5000
 
-    a. Navigate to the `my-ai-grader/` directory:
-    `bash
-    cd my-ai-grader
-    `
-    b. Run the Vite development server:
-    `bash
-    npm run dev
-    `
-    The frontend application will be available at `http://localhost:5173`.
-    Vite is configured (in `vite.config.ts`) to proxy API requests starting with `/api` from the frontend (`http://localhost:5173/api/...`) to the backend server (e.g., `http://127.0.0.1:5000/api/...`).
+## 🎯 使用流程
 
-## Available Scripts (Frontend - `my-ai-grader/`)
+### 新手快速上手：
 
-Navigate to the `my-ai-grader/` directory to run these scripts:
+1. **首次使用配置**
+   - 访问 http://localhost:5173/configuration
+   - 输入你的AI模型API密钥
+   - 测试连接是否成功
 
-- **`npm run dev`**: Starts the Vite development server with HMR.
-- **`npm run build`**: Builds the application for production.
-- **`npm run preview`**: Serves the production build locally for preview.
-- **`npm run lint`**: Lints the codebase using ESLint and configured plugins.
-- **`npm run format`**: Formats the code using Prettier.
+2. **设置标准答案**
+   - 访问 http://localhost:5173/standard-answer
+   - 上传1-10张标准答案图片
+   - 等待AI分析完成
+   - 确认或修改评分标准
 
-## API Endpoints (Backend - `backend/app.py`)
+3. **批量批改作业**
+   - 访问 http://localhost:5173/batch-grading
+   - 上传全班学生作业图片（最多50份）
+   - 选择对应的标准答案
+   - 开始自动批改
 
-Currently, the backend exposes the following main API endpoints:
+4. **查看结果**
+   - 访问 http://localhost:5173/results
+   - 查看成绩分布图表
+   - 导出CSV成绩表
+   - 可重新批改个别学生作业
 
-- **`POST /api/analyze_answer`**:
+## 📋 可用脚本
 
-  - Accepts `imageData` (Base64 data URL of the standard answer image).
-  - Interfaces with the configured LLM to get a textual analysis and a suggested JSON rubric.
-  - Returns `analyzedText` (the full AI analysis) and `suggestedRubricJson` (the extracted JSON rubric string).
+### 前端开发命令（在my-ai-grader/目录下）：
+```bash
+npm run dev      # 启动开发服务器
+npm run build    # 构建生产版本
+npm run preview  # 预览生产版本
+npm run lint     # 代码检查
+npm run format   # 代码格式化
+```
 
-- **`POST /api/grade`**:
+### 后端开发命令（在backend/目录下）：
+```bash
+python app.py    # 启动Flask服务器
+python -m pytest # 运行测试（如果有）
+```
 
-  - Accepts `imageData` (Base64 data URL of the student submission) and a comprehensive `prompt` (constructed by the frontend, containing context from standard answer analysis and the user-defined rubric).
-  - Interfaces with the configured LLM to grade the submission.
-  - Returns `feedbackMarkdown` (a Markdown string containing the detailed grading results generated by the LLM).
+## 🔌 API接口说明
 
-- **`GET /api/greet`**:
-  - A simple test endpoint to check backend connectivity.
+### 主要接口：
+- `POST /api/analyze_answer` - 分析标准答案图片
+- `POST /api/grade` - 批改学生作业
+- `POST /api/analyze_multi_answer` - 多图标准答案分析
+- `POST /api/batch_grade` - 批量批改作业
+- `GET /api/greet` - 连接测试
 
-## Project Status & Next Steps
+## 📊 功能特色
 
-Please refer to `
+### 多图标准答案分析
+- 支持最多10张标准答案图片
+- AI智能分析所有图片内容
+- 自动生成评分标准JSON
+
+### 批量作业批改
+- 一次性处理50份学生作业
+- 实时进度显示
+- 支持ZIP文件上传
+- 自动提取学生学号
+
+### 智能结果管理
+- 完整的批改历史记录
+- 成绩分布图表
+- 多维度筛选搜索
+- 一键导出全班成绩
+
+### 多AI模型支持
+- OpenAI GPT-4o/4o Mini
+- Claude 3.5 Sonnet/Haiku
+- 自定义API端点
+
+## 🐛 常见问题
+
+### Q: 连接AI模型失败怎么办？
+A: 检查配置文件中的API密钥和端点URL是否正确，确保网络连接正常。
+
+### Q: 图片上传失败？
+A: 检查图片格式（支持JPG、PNG），单张图片大小不超过5MB。
+
+### Q: 批量批改速度慢？
+A: 可以调整并发设置，或使用更快的AI模型（如GPT-4o Mini）。
+
+## 📞 技术支持
+
+如有问题，请查看项目Issues或联系开发团队。
+
+---
+
+**版本**: v0.2.2  
+**更新日期**: 2025-07-19  
+**状态**: 生产就绪 ✨

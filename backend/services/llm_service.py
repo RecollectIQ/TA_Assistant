@@ -46,7 +46,8 @@ def call_llm_api(
 
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept-Charset": "utf-8"
     }
 
     messages_content = [{"type": "text", "text": prompt_text}]
@@ -107,11 +108,16 @@ def call_llm_api(
             return result_json
         except json.JSONDecodeError as e:
             print(f"LLM Service Error: Failed to decode JSON from external API: {e}")
-            print(f"LLM Service: Raw response text (first 500 chars): {response.text[:500]}...")
+            # 尝试使用UTF-8编码处理响应
+            try:
+                raw_text = response.content.decode('utf-8')[:500]
+            except:
+                raw_text = response.text[:500]
+            print(f"LLM Service: Raw response text (first 500 chars): {raw_text}...")
             raise LLMServiceError(
                 message="Failed to parse JSON response from LLM service.",
                 status_code=500, # Internal server error type
-                details=response.text[:500] # Provide snippet of raw response
+                details=raw_text # Provide snippet of raw response
             )
 
     except requests.exceptions.RequestException as e:
