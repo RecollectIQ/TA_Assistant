@@ -82,8 +82,8 @@
                 <el-button
                   size="small"
                   type="text"
-                  @click="removeImage(image.id)"
                   class="remove-btn"
+                  @click="removeImage(image.id)"
                 >
                   <el-icon><Close /></el-icon>
                 </el-button>
@@ -106,7 +106,8 @@
   import { UploadFilled, Delete, Close } from '@element-plus/icons-vue';
   import type { StandardAnswerImage } from '@/types/grading';
   import { useImageUpload } from '@/composables/useImageUpload';
-  import { formatFileSize, generateUniqueId } from '@/utils/validation';
+  import { formatFileSize, compressImage } from '@/utils/fileUtils';
+  import { InputValidator } from '@/utils/validation';
 
   interface Props {
     maxImages?: number;
@@ -156,14 +157,27 @@
     const files = Array.from(target.files || []);
 
     for (const file of files) {
-      if (!file.type.startsWith('image/')) {
-        ElMessage.warning(`Skipping non-image file: ${file.name}`);
+      const validation = InputValidator.validateFileUpload(file);
+      if (!validation.isValid) {
+        ElMessage.error(
+          `Invalid file ${file.name}: ${validation.errors[0].message}`,
+        );
         continue;
       }
 
-      const result = await addImage(file);
-      if (result) {
-        handleImageChange();
+      try {
+        // Compress large images before adding
+        const compressedDataUrl = await compressImage(file, 1920, 1080, 0.8);
+        const compressedFile = new File([file], file.name, { type: file.type });
+
+        const result = await addImage(compressedFile, compressedDataUrl);
+        if (result) {
+          handleImageChange();
+        }
+      } catch (error) {
+        ElMessage.error(
+          `Failed to process file ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     }
 
@@ -192,14 +206,27 @@
     const files = Array.from(event.dataTransfer?.files || []);
 
     for (const file of files) {
-      if (!file.type.startsWith('image/')) {
-        ElMessage.warning(`Skipping non-image file: ${file.name}`);
+      const validation = InputValidator.validateFileUpload(file);
+      if (!validation.isValid) {
+        ElMessage.error(
+          `Invalid file ${file.name}: ${validation.errors[0].message}`,
+        );
         continue;
       }
 
-      const result = await addImage(file);
-      if (result) {
-        handleImageChange();
+      try {
+        // Compress large images before adding
+        const compressedDataUrl = await compressImage(file, 1920, 1080, 0.8);
+        const compressedFile = new File([file], file.name, { type: file.type });
+
+        const result = await addImage(compressedFile, compressedDataUrl);
+        if (result) {
+          handleImageChange();
+        }
+      } catch (error) {
+        ElMessage.error(
+          `Failed to process file ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     }
   };

@@ -1,42 +1,34 @@
 import { ref, computed } from 'vue';
-import type { Ref } from 'vue';
-import {
-  validateFile,
-  formatFileSize,
-  generateUniqueId,
-  sanitizeFileName,
-} from '@/utils/validation';
+import { InputValidator } from '@/utils/validation';
+import { generateUniqueId, compressImage } from '@/utils/fileUtils';
 import type { StandardAnswerImage } from '@/types/grading';
-import type { ValidationRule } from '@/types/common';
 
 export function useImageUpload(
   maxImages = 10,
-  maxSize = 2 * 1024 * 1024, // 2MB
-  allowedTypes = ['image/jpeg', 'image/png', 'image/gif'],
+  maxSize = 10 * 1024 * 1024, // 10MB
 ) {
   const images = ref<StandardAnswerImage[]>([]);
   const isDragging = ref(false);
   const uploadProgress = ref(0);
   const uploadError = ref<string | null>(null);
 
-  const validationRules: ValidationRule[] = [
-    { type: 'type', allowedTypes },
-    { type: 'size', maxSize },
-    { type: 'count', maxCount: maxImages },
-  ];
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   const canAddMoreImages = computed(() => images.value.length < maxImages);
   const totalSize = computed(() =>
     images.value.reduce((sum, img) => sum + img.size, 0),
   );
 
-  const addImage = async (file: File): Promise<StandardAnswerImage | null> => {
+  const addImage = async (
+    file: File,
+    compressedDataUrl?: string,
+  ): Promise<StandardAnswerImage | null> => {
     uploadError.value = null;
 
     // Validate file
-    const validation = validateFile(file, validationRules);
+    const validation = InputValidator.validateFileUpload(file);
     if (!validation.isValid) {
-      uploadError.value = validation.error || 'Invalid file';
+      uploadError.value = validation.errors[0].message;
       return null;
     }
 
@@ -47,22 +39,26 @@ export function useImageUpload(
     }
 
     try {
-      // Convert to data URL
-      const dataUrl = await fileToDataUrl(file);
+      // Use provided compressed data URL or compress if needed
+      let dataUrl = compressedDataUrl;
+      if (!dataUrl) {
+        dataUrl = await compressImage(file, 1920, 1080, 0.8);
+      }
 
       const image: StandardAnswerImage = {
         id: generateUniqueId(),
         file,
         dataUrl,
         order: images.value.length,
-        name: sanitizeFileName(file.name),
+        name: file.name.replace(/[^\w\s.-]/g, ''), // Sanitize filename
         size: file.size,
       };
 
       images.value.push(image);
       return image;
     } catch (error) {
-      uploadError.value = 'Failed to process image';
+      uploadError.value =
+        error instanceof Error ? error.message : 'Failed to process image';
       return null;
     }
   };
@@ -97,7 +93,12 @@ export function useImageUpload(
 
   const handleDragLeave = (event: DragEvent) => {
     event.preventDefault();
-    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+    if (
+      event.currentTarget &&
+      !(event.currentTarget as HTMLElement).contains(
+        event.relatedTarget as Node,
+      )
+    ) {
       isDragging.value = false;
     }
   };
@@ -124,15 +125,6 @@ export function useImageUpload(
 
     // Reset input value to allow selecting the same file again
     target.value = '';
-  };
-
-  const fileToDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
   };
 
   return {

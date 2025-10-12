@@ -8,8 +8,12 @@ export default defineConfig({
   plugins: [
     vue(),
     eslintPlugin({
-      // Add the plugin
-      cache: false, // Disable cache to ensure checks on every change
+      // 开发模式不中断服务，只显示警告
+      cache: false,
+      failOnError: false,
+      failOnWarning: false,
+      emitWarning: true,
+      emitError: true,
       include: ['src/**/*.js', 'src/**/*.vue', 'src/**/*.ts'],
       exclude: ['node_modules', 'dist'],
     }),
@@ -24,7 +28,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },
     },

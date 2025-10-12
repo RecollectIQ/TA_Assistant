@@ -1,9 +1,12 @@
 export interface ApiConfig {
+  id?: string;
   apiUrl: string;
   apiKey: string;
   modelName: string;
   maxTokens?: number;
   timeout?: number;
+  createdAt?: string;
+  name?: string;
 }
 
 export interface ApiTestResult {

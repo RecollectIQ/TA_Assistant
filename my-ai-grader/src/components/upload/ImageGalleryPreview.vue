@@ -37,7 +37,7 @@
             dragging: draggingId === image.id,
             'drag-over': dragOverId === image.id,
           }"
-          draggable="reorderMode"
+          :draggable="reorderMode"
           @dragstart="handleDragStart(image)"
           @dragover="handleDragOver(image)"
           @dragleave="handleDragLeave(image)"
@@ -60,7 +60,9 @@
                 <span class="image-name" :title="image.name">{{
                   truncateText(image.name, 15)
                 }}</span>
-                <span class="image-size">{{ formatFileSize(image.size) }}</span>
+                <span class="image-size">{{
+                  InputValidator.formatFileSize(image.size)
+                }}</span>
               </div>
 
               <!-- Actions -->
@@ -113,7 +115,7 @@
           <p><strong>Name:</strong> {{ currentPreviewImage?.name }}</p>
           <p>
             <strong>Size:</strong>
-            {{ formatFileSize(currentPreviewImage?.size || 0) }}
+            {{ InputValidator.formatFileSize(currentPreviewImage?.size || 0) }}
           </p>
           <p><strong>Order:</strong> #{{ currentPreviewIndex + 1 }}</p>
         </div>
@@ -122,16 +124,16 @@
       <template #footer>
         <div class="preview-actions">
           <el-button
-            @click="previousImage"
             :disabled="currentPreviewIndex === 0"
+            @click="previousImage"
           >
             <el-icon><ArrowLeft /></el-icon>
             Previous
           </el-button>
           <span>{{ currentPreviewIndex + 1 }} / {{ images.length }}</span>
           <el-button
-            @click="nextImage"
             :disabled="currentPreviewIndex === images.length - 1"
+            @click="nextImage"
           >
             Next
             <el-icon><ArrowRight /></el-icon>
@@ -154,7 +156,7 @@
     ArrowRight,
   } from '@element-plus/icons-vue';
   import type { StandardAnswerImage } from '@/types/grading';
-  import { formatFileSize } from '@/utils/validation';
+  import { InputValidator } from '@/utils/validation';
 
   interface Props {
     images: StandardAnswerImage[];
@@ -252,10 +254,6 @@
   const openPreview = (index: number) => {
     currentPreviewIndex.value = index;
     previewVisible.value = true;
-  };
-
-  const closePreview = () => {
-    previewVisible.value = false;
   };
 
   const previousImage = () => {

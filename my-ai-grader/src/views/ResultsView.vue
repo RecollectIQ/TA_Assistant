@@ -68,7 +68,7 @@
               </div>
 
               <div class="actions-section">
-                <el-button @click="refreshResults" :loading="isLoading">
+                <el-button :loading="isLoading" @click="refreshResults">
                   <el-icon><Refresh /></el-icon>
                   Refresh
                 </el-button>
@@ -167,10 +167,10 @@
               </template>
 
               <el-table
+                v-loading="isLoading"
                 :data="paginatedResults"
                 style="width: 100%"
                 :default-sort="{ prop: 'timestamp', order: 'descending' }"
-                v-loading="isLoading"
               >
                 <el-table-column
                   prop="timestamp"
@@ -288,7 +288,7 @@
 
     <!-- Detailed Result Modal -->
     <BaseModal
-      v-model:isOpen="showResultModal"
+      v-model:is-open="showResultModal"
       title="Detailed Grading Result"
       size="large"
     >
@@ -373,7 +373,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, nextTick } from 'vue';
+  import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
   import {
     Document,
     SuccessFilled,
@@ -386,10 +386,10 @@
   import { ElMessage } from 'element-plus';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
-  import { useEnhancedGradingStore } from '@/stores/enhancedGradingStore';
+  import { useGradingStore } from '@/stores/gradingStore';
   import type { HistoricalResult } from '@/types/grading';
 
-  const gradingStore = useEnhancedGradingStore();
+  const gradingStore = useGradingStore();
 
   // State
   const results = ref<HistoricalResult[]>([]);
@@ -403,6 +403,10 @@
   // Chart refs
   const scoreChartRef = ref<HTMLCanvasElement | null>(null);
   const trendChartRef = ref<HTMLCanvasElement | null>(null);
+
+  // Chart instances
+  let scoreChart: any | null = null;
+  let trendChart: any | null = null;
 
   // Filters
   const filters = ref({
@@ -511,12 +515,26 @@
     if (!scoreChartRef.value || !trendChartRef.value) return;
 
     // Import Chart.js dynamically
-    const Chart = await import('chart.js/auto');
+    const { default: Chart } = await import('chart.js/auto');
+
+    // Destroy existing charts before re-rendering to avoid stale refs/listeners
+    if (scoreChart) {
+      try {
+        scoreChart.destroy();
+      } catch {}
+      scoreChart = null;
+    }
+    if (trendChart) {
+      try {
+        trendChart.destroy();
+      } catch {}
+      trendChart = null;
+    }
 
     // Score Distribution Chart
     const scoreCtx = scoreChartRef.value.getContext('2d');
     if (scoreCtx) {
-      new Chart.default(scoreCtx, {
+      scoreChart = new Chart(scoreCtx, {
         type: 'bar',
         data: {
           labels: ['0-59', '60-69', '70-79', '80-89', '90-100'],
@@ -558,7 +576,7 @@
     const trendCtx = trendChartRef.value.getContext('2d');
     if (trendCtx) {
       const trendData = calculateTrendData();
-      new Chart.default(trendCtx, {
+      trendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
           labels: trendData.labels,
@@ -714,6 +732,21 @@
 
   onMounted(() => {
     loadResults();
+  });
+
+  onBeforeUnmount(() => {
+    if (scoreChart) {
+      try {
+        scoreChart.destroy();
+      } catch {}
+      scoreChart = null;
+    }
+    if (trendChart) {
+      try {
+        trendChart.destroy();
+      } catch {}
+      trendChart = null;
+    }
   });
 </script>
 

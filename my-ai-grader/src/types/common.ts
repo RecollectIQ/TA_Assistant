@@ -32,9 +32,7 @@ export interface SortOptions {
   direction: 'asc' | 'desc';
 }
 
-export interface FilterOptions {
-  [key: string]: any;
-}
+export type FilterOptions = Record<string, any>;
 
 export interface ExportOptions {
   format: 'csv' | 'excel' | 'pdf';
@@ -114,16 +112,16 @@ export interface KeyboardEvent {
 }
 
 // Debounce and throttle types
-export type DebounceOptions = {
+export interface DebounceOptions {
   delay: number;
   immediate?: boolean;
-};
+}
 
-export type ThrottleOptions = {
+export interface ThrottleOptions {
   delay: number;
   leading?: boolean;
   trailing?: boolean;
-};
+}
 
 // Theme and styling types
 export interface ThemeConfig {

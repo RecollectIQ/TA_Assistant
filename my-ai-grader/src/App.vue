@@ -47,11 +47,11 @@
           :default-active="$route.path"
           class="app-nav-menu"
         >
-          <el-menu-item index="/">首页</el-menu-item>
-          <el-menu-item index="/configuration">配置</el-menu-item>
-          <el-menu-item index="/standard-answer">标准答案</el-menu-item>
-          <el-menu-item index="/batch-grading">批量批改</el-menu-item>
-          <el-menu-item index="/results">结果</el-menu-item>
+          <el-menu-item index="/">Home</el-menu-item>
+          <el-menu-item index="/configuration">Configuration</el-menu-item>
+          <el-menu-item index="/standard-answer">Standard Answer</el-menu-item>
+          <el-menu-item index="/batch-grading">Batch Grading</el-menu-item>
+          <el-menu-item index="/results">Results</el-menu-item>
         </el-menu>
       </el-header>
       <el-main class="app-main-content">

@@ -1,8 +1,7 @@
 import { ref, computed } from 'vue';
-import type { Ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import type { StudentSubmission, BatchProgress } from '@/types/grading';
-import { generateUniqueId } from '@/utils/validation';
+import { InputValidator } from '@/utils/validation';
 
 export function useBatchProcessing() {
   const submissions = ref<StudentSubmission[]>([]);
@@ -48,7 +47,7 @@ export function useBatchProcessing() {
       const dataUrl = await fileToDataUrl(file);
 
       const submission: StudentSubmission = {
-        id: generateUniqueId(),
+        id: InputValidator.generateUniqueId(),
         name: studentName || file.name.replace(/\..+$/, ''), // Remove file extension
         file,
         dataUrl,

@@ -1,7 +1,7 @@
 <template>
   <el-container direction="vertical" style="height: 100%">
     <el-header style="text-align: center; font-size: 20px; padding: 20px">
-      步骤 1: 上传标准答案并定义评分细则
+      Step 1: Upload Standard Answer and Define Rubric
     </el-header>
     <el-main
       style="
@@ -13,7 +13,7 @@
     >
       <el-card style="width: 80%; max-width: 700px; margin-bottom: 20px">
         <template #header>
-          <div>上传标准答案图片</div>
+          <div>Upload Standard Answer Image</div>
         </template>
         <el-upload
           drag
@@ -26,10 +26,10 @@
           :disabled="gradingStore.isLoadingAnalysis"
         >
           <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+          <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
           <template #tip>
             <div class="el-upload__tip">
-              只能上传 jpg/png/gif 文件，且不超过 2MB
+              Only jpg/png/gif files, max 2MB
             </div>
           </template>
         </el-upload>
@@ -38,7 +38,7 @@
           style="margin-top: 10px; text-align: center"
         >
           <el-progress :percentage="100" :indeterminate="true" :duration="1" />
-          <p>正在分析标准答案，请稍候...</p>
+          <p>Analyzing standard answer, please wait...</p>
         </div>
         <div
           v-if="
@@ -47,7 +47,7 @@
           "
           style="margin-top: 20px; text-align: center"
         >
-          <p>标准答案图片预览:</p>
+          <p>Standard Answer Preview:</p>
           <el-image
             :src="gradingStore.standardAnswerImageUrl"
             style="max-width: 100%; max-height: 300px"
@@ -65,20 +65,20 @@
         style="width: 80%; max-width: 700px; margin-bottom: 20px"
       >
         <template #header>
-          <div>标准答案分析结果</div>
+          <div>Standard Answer Analysis</div>
         </template>
         <div
           v-if="gradingStore.analysisError"
           class="error-message"
           style="color: red; margin-bottom: 10px"
         >
-          <p>分析失败:</p>
+          <p>Analysis Failed:</p>
           <pre>{{ gradingStore.analysisError }}</pre>
         </div>
         <el-input
           type="textarea"
           :rows="8"
-          placeholder="AI分析的标准答案结构将显示在这里..."
+          placeholder="AI-analyzed standard answer structure will appear here..."
           :model-value="gradingStore.analyzedStandardAnswerText"
           readonly
         />
@@ -93,13 +93,13 @@
         style="width: 80%; max-width: 700px; margin-bottom: 20px"
       >
         <template #header>
-          <div>定义评分细则 (Rubric)</div>
+          <div>Define Grading Rubric</div>
         </template>
         <el-input
           v-model="gradingStore.gradingRubric"
           type="textarea"
           :rows="10"
-          placeholder="请根据上方标准答案的分析结果，在此处填写详细的评分细则... (AI建议的Rubric已自动填充)"
+          placeholder="Based on the analysis above, enter detailed grading criteria here... (AI-suggested rubric has been auto-filled)"
         />
         <div
           v-if="
@@ -109,9 +109,9 @@
           style="margin-top: 10px; font-size: 0.9em; color: #909399"
         >
           <p>
-            提示: AI建议的Rubric已填充。您可以直接修改，或
+            Tip: AI-suggested rubric has been filled in. You can edit directly, or
             <el-button type="text" @click="restoreSuggestedRubric"
-              >恢复AI建议的Rubric</el-button
+              >Restore AI Suggestion</el-button
             >
           </p>
         </div>
@@ -128,7 +128,7 @@
         "
         @click="goToStudentUpload"
       >
-        下一步：上传学生答案
+        Next: Upload Student Answer
       </el-button>
     </el-main>
   </el-container>
@@ -155,14 +155,16 @@
     const isLt2M = rawFile.size / 1024 / 1024 < 2;
 
     if (!isImage) {
-      ElMessage.error('上传图片只能是 JPG/PNG/GIF 格式!');
+      ElMessage.error('Only JPG/PNG/GIF format is allowed!');
       return false;
     }
     if (!isLt2M) {
-      ElMessage.error('上传图片大小不能超过 2MB!');
+      ElMessage.error('Image size must not exceed 2MB!');
       return false;
     }
-    gradingStore.setStandardAnswerImageUrl(null);
+
+    // Clear previous standard answer images
+    gradingStore.clearStandardAnswerImages();
     return true;
   };
 
@@ -170,66 +172,44 @@
     options: UploadRequestOptions,
   ): Promise<void> => {
     const file = options.file as UploadRawFile;
-    // gradingStore.standardAnswerImageUrl = null; // Direct assignment removed, setStandardAnswerImageUrl(null) is in beforeStandardAnswerUpload
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       if (e.target?.result) {
         const imageDataUrl = e.target.result as string;
-        // Use the action to set the URL and reset other relevant states
-        gradingStore.setStandardAnswerImageUrl(imageDataUrl);
 
-        console.log(
-          '[StandardAnswerView.vue] Attempting to call gradingStore.analyzeStandardAnswer',
-        );
-        console.log(
-          '[StandardAnswerView.vue] typeof gradingStore.analyzeStandardAnswer is:',
-          typeof gradingStore.analyzeStandardAnswer,
-        );
-        console.log(
-          '[StandardAnswerView.vue] gradingStore instance:',
-          gradingStore,
-        );
+        // 创建标准答案图片对象
+        const standardAnswerImage = {
+          id: Date.now().toString(),
+          dataUrl: imageDataUrl,
+          name: file.name,
+          order: 0,
+          uploadedAt: new Date().toISOString(),
+        };
 
-        if (typeof gradingStore.analyzeStandardAnswer === 'function') {
-          await gradingStore.analyzeStandardAnswer(imageDataUrl);
-        } else {
-          console.error(
-            '[StandardAnswerView.vue] gradingStore.analyzeStandardAnswer is NOT a function! Store might be malformed or HMR issue.',
-          );
-          ElMessage.error(
-            '发生内部错误: 分析函数不可用。请尝试刷新页面或重启服务。',
-          );
-          if (gradingStore.isLoadingAnalysis) {
-            gradingStore.isLoadingAnalysis = false;
-          }
-        }
+        // Use new store method
+        gradingStore.addStandardAnswerImage(standardAnswerImage);
+        await gradingStore.analyzeStandardAnswer(imageDataUrl);
       } else {
-        ElMessage.error('读取文件失败');
-        if (gradingStore.isLoadingAnalysis) {
-          gradingStore.isLoadingAnalysis = false;
-        }
+        ElMessage.error('Failed to read file');
       }
     };
     reader.onerror = () => {
-      ElMessage.error('读取文件发生错误');
-      if (gradingStore.isLoadingAnalysis) {
-        gradingStore.isLoadingAnalysis = false;
-      }
+      ElMessage.error('Error occurred while reading file');
     };
     reader.readAsDataURL(file);
   };
 
   const goToStudentUpload = () => {
-    if (gradingStore.gradingRubric.trim() === '') {
-      ElMessage.warning('请填写评分细则 (Rubric) 后再继续。');
+    if (!gradingStore.suggestedRubric.trim()) {
+      ElMessage.warning('Please fill in the grading rubric before continuing.');
       return;
     }
     router.push('/grading');
   };
 
   const restoreSuggestedRubric = () => {
-    gradingStore.gradingRubric = gradingStore.suggestedRubricJson;
+    gradingStore.gradingRubric = gradingStore.suggestedRubric;
   };
 </script>
 

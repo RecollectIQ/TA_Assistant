@@ -3,14 +3,14 @@
     <template #header>
       <div class="card-header">
         <span
-          ><el-icon style="margin-right: 4px"><House /></el-icon>欢迎使用 AI
+          ><el-icon style="margin-right: 4px"><House /></el-icon>Welcome to AI
           Grader</span
         >
       </div>
     </template>
-    <el-empty description="暂无更多内容，请选择操作">
-      <el-button type="primary" @click="goToStandardAnswer">开始批改</el-button>
-      <el-button @click="goToProfiles">管理题目配置</el-button>
+    <el-empty description="No content yet, please select an action">
+      <el-button type="primary" @click="goToStandardAnswer">Start Grading</el-button>
+      <el-button @click="goToProfiles">Manage Configuration</el-button>
     </el-empty>
 
     <div class="features-section">
@@ -21,8 +21,8 @@
               <el-icon :size="40" color="var(--el-color-primary)"
                 ><EditPen
               /></el-icon>
-              <h3>智能评分</h3>
-              <p>利用AI对图像进行自动化评分。</p>
+              <h3>Smart Grading</h3>
+              <p>Automated grading using AI for images.</p>
             </div>
           </el-card>
         </el-col>
@@ -32,8 +32,8 @@
               <el-icon :size="40" color="var(--el-color-success)"
                 ><Files
               /></el-icon>
-              <h3>配置管理</h3>
-              <p>灵活定义题目和评分标准。</p>
+              <h3>Configuration Management</h3>
+              <p>Flexibly define questions and grading criteria.</p>
             </div>
           </el-card>
         </el-col>
@@ -43,8 +43,8 @@
               <el-icon :size="40" color="var(--el-color-warning)"
                 ><Picture
               /></el-icon>
-              <h3>图片处理</h3>
-              <p>轻松上传和管理待批改图片。</p>
+              <h3>Image Processing</h3>
+              <p>Easily upload and manage images for grading.</p>
             </div>
           </el-card>
         </el-col>

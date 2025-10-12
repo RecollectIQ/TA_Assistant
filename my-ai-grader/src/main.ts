@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia'; // Import createPinia
-import './style.css';
+// Removed Vite starter global styles to avoid layout conflicts
+import './styles/themes.css'; // Import theme styles
 import App from './App.vue';
 import router from './router'; // Import the router
 

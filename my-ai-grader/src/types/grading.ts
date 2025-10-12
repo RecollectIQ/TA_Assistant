@@ -6,24 +6,25 @@ export interface StandardAnswerImage {
   order: number;
   name: string;
   size: number;
+  uploadedAt?: string;
 }
 
 export interface MultiAnalyzeRequest {
-  images: Array<{
+  images: {
     data: string; // base64 data URL
     order: number;
     name: string;
-  }>;
+  }[];
 }
 
 export interface MultiAnalyzeResponse {
   analyzedText: string;
   suggestedRubricJson: string;
-  imageAnalyses: Array<{
+  imageAnalyses: {
     order: number;
     analysis: string;
     keyPoints: string[];
-  }>;
+  }[];
 }
 
 // Batch student processing interfaces
@@ -48,27 +49,27 @@ export interface GradingResult {
 }
 
 export interface BatchGradeRequest {
-  standardAnswerImages: Array<{
+  standardAnswerImages: {
     data: string;
     order: number;
-  }>;
+  }[];
   standardAnalysis: string;
   rubric: string;
-  studentSubmissions: Array<{
+  studentSubmissions: {
     id: string;
     name: string;
     imageData: string;
-  }>;
+  }[];
 }
 
 export interface BatchGradeResponse {
   batchId: string;
-  results: Array<{
+  results: {
     studentId: string;
     status: 'completed' | 'error';
     feedbackMarkdown?: string;
     error?: string;
-  }>;
+  }[];
   summary: {
     total: number;
     completed: number;
@@ -169,12 +170,12 @@ export interface HistoricalResult {
   status: 'completed' | 'failed' | 'processing';
   confidence: number;
   processingTime: number;
-  criteria: Array<{
+  criteria: {
     name: string;
     score: number;
     maxScore: number;
     feedback: string;
-  }>;
+  }[];
 }
 
 export interface BatchGradingResult {
@@ -194,11 +195,11 @@ export interface StandardAnswer {
   description: string;
   images: StandardAnswerImage[];
   rubric: {
-    criteria: Array<{
+    criteria: {
       name: string;
       maxScore: number;
       description: string;
-    }>;
+    }[];
     totalScore: number;
   };
   analysis: string;

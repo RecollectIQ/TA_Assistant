@@ -52,14 +52,18 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
 
   const saveApiConfig = (config: ApiConfig): void => {
     try {
+      console.log('保存API配置:', config);
       apiConfig.value = config;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
       isConfigured.value = true;
       connectionStatus.value = 'untested';
       lastTestError.value = null;
+      console.log('API配置保存成功');
     } catch (error) {
       console.error('Failed to save API config to localStorage:', error);
-      throw new Error('Failed to save configuration');
+      throw new Error(
+        `保存API配置失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      );
     }
   };
 

@@ -14,7 +14,7 @@
         >
           <!-- Header -->
           <div v-if="$slots.header || title" class="modal-header">
-            <div class="modal-title" :id="titleId">
+            <div :id="titleId" class="modal-title">
               <slot name="header">
                 <h3 class="text-lg font-semibold">{{ title }}</h3>
               </slot>
@@ -22,8 +22,8 @@
             <button
               v-if="closable"
               class="modal-close"
-              @click="close"
               aria-label="Close modal"
+              @click="close"
             >
               <el-icon><Close /></el-icon>
             </button>

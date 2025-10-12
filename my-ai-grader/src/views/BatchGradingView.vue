@@ -62,18 +62,18 @@
             </BaseCard>
 
             <MultiImageUploader
+              ref="uploaderRef"
               :max-images="submissionSettings.maxSubmissions"
               :max-file-size="5 * 1024 * 1024"
               @images-change="handleSubmissionsChange"
-              ref="uploaderRef"
             />
 
             <div class="step-actions">
               <el-button
                 type="primary"
                 :disabled="!canProceedToGrading"
-                @click="proceedToGrading"
                 size="large"
+                @click="proceedToGrading"
               >
                 Next: Configure Grading
                 <el-icon><ArrowRight /></el-icon>
@@ -168,7 +168,7 @@
             </div>
 
             <div class="step-actions">
-              <el-button @click="currentStep = 1" size="large">
+              <el-button size="large" @click="currentStep = 1">
                 <el-icon><ArrowLeft /></el-icon>
                 Back
               </el-button>
@@ -176,8 +176,8 @@
                 type="primary"
                 :disabled="!canStartGrading"
                 :loading="isGrading"
-                @click="startBatchGrading"
                 size="large"
+                @click="startBatchGrading"
               >
                 Start Batch Grading
                 <el-icon><Check /></el-icon>
@@ -319,11 +319,11 @@
             </div>
 
             <div class="step-actions">
-              <el-button @click="currentStep = 2" size="large">
+              <el-button size="large" @click="currentStep = 2">
                 <el-icon><ArrowLeft /></el-icon>
                 Back
               </el-button>
-              <el-button type="primary" @click="resetBatchGrading" size="large">
+              <el-button type="primary" size="large" @click="resetBatchGrading">
                 Grade Another Batch
                 <el-icon><Refresh /></el-icon>
               </el-button>
@@ -335,7 +335,7 @@
 
     <!-- Standard Answer Selection Modal -->
     <BaseModal
-      v-model:isOpen="showStandardAnswerModal"
+      v-model:is-open="showStandardAnswerModal"
       title="Select Standard Answer"
       size="large"
     >
@@ -375,7 +375,7 @@
 
     <!-- Detailed Result Modal -->
     <BaseModal
-      v-model:isOpen="showResultModal"
+      v-model:is-open="showResultModal"
       title="Detailed Grading Result"
       size="large"
     >
@@ -420,8 +420,8 @@
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item
-                label="Error Message"
                 v-if="selectedResult.error"
+                label="Error Message"
               >
                 {{ selectedResult.error }}
               </el-descriptions-item>
@@ -447,13 +447,12 @@
     SuccessFilled,
     CircleCloseFilled,
     WarningFilled,
-    Close,
   } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import MultiImageUploader from '@/components/upload/MultiImageUploader.vue';
-  import { useEnhancedGradingStore } from '@/stores/enhancedGradingStore';
+  import { useGradingStore } from '@/stores/gradingStore';
   import { apiService } from '@/services/apiService';
   import type {
     StandardAnswer,
@@ -463,7 +462,7 @@
   } from '@/types/grading';
 
   const router = useRouter();
-  const gradingStore = useEnhancedGradingStore();
+  const gradingStore = useGradingStore();
 
   // State
   const currentStep = ref(1);
@@ -762,7 +761,10 @@
   };
 
   onMounted(async () => {
-    await gradingStore.loadStandardAnswers();
+    const anyStore = gradingStore as unknown as Record<string, any>;
+    if (typeof anyStore.loadStandardAnswers === 'function') {
+      await anyStore.loadStandardAnswers();
+    }
   });
 </script>
 

@@ -14,7 +14,7 @@
           <div class="card-header">
             <span
               ><el-icon style="margin-right: 4px"><InfoFilled /></el-icon
-              >评分参考信息</span
+              >Reference Info</span
             >
           </div>
         </template>
@@ -22,7 +22,7 @@
           <el-descriptions-item
             v-if="standardAnswerAnalysis"
             label-style="width: 120px"
-            label="标准答案分析"
+            label="Standard Answer Analysis"
           >
             <div
               style="white-space: pre-wrap; max-height: 150px; overflow-y: auto"
@@ -33,7 +33,7 @@
           <el-descriptions-item
             v-if="currentRubric"
             label-style="width: 120px"
-            label="评分细则 (Rubric)"
+            label="Rubric"
           >
             <div
               style="white-space: pre-wrap; max-height: 150px; overflow-y: auto"
@@ -50,7 +50,7 @@
           <div class="card-header">
             <span
               ><el-icon style="margin-right: 4px"><PictureFilled /></el-icon
-              >图片展示区</span
+              >Image Display Area</span
             >
           </div>
         </template>
@@ -63,10 +63,10 @@
           drag
         >
           <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">拖拽文件到此处或 <em>点击上传</em></div>
+          <div class="el-upload__text">Drag file here or <em>click to upload</em></div>
           <template #tip>
             <div class="el-upload__tip">
-              只能上传 jpg/png 文件，且不超过 2MB
+              Only jpg/png files are allowed, up to 2MB
             </div>
           </template>
         </el-upload>
@@ -76,8 +76,8 @@
           fit="contain"
           class="uploaded-image-preview"
         />
-        <el-empty v-else description="请上传图片进行批改" />
-        <!-- 图片上传和展示逻辑将在此处实现 (模块 11.3) -->
+        <el-empty v-else description="Please upload an image for grading" />
+        <!-- Image upload and display logic here (Module 11.3) -->
       </el-card>
     </el-main>
     <el-aside width="70%" class="results-sidebar">
@@ -86,14 +86,14 @@
           <div class="card-header">
             <span
               ><el-icon style="margin-right: 4px"><List /></el-icon
-              >批改结果侧边栏</span
+              >Grading Sidebar</span
             >
           </div>
         </template>
         <div v-loading="gradingStore.isLoadingGrading" class="results-content">
           <div class="detailed-feedback">
             <h4>
-              <el-icon><ChatDotSquare /></el-icon> 详细反馈
+              <el-icon><ChatDotSquare /></el-icon> Detailed Feedback
             </h4>
             <el-scrollbar class="feedback-scrollbar">
               <!-- eslint-disable-next-line vue/no-v-html -->
@@ -106,8 +106,8 @@
                 v-else
                 :description="
                   gradingStore.isLoadingGrading
-                    ? '正在努力分析中，请稍候...'
-                    : '暂无详细反馈'
+                    ? 'Analyzing, please wait...'
+                    : 'No feedback available'
                 "
               />
             </el-scrollbar>
@@ -117,22 +117,22 @@
 
           <div class="result-actions">
             <h4>
-              <el-icon><Tools /></el-icon> 操作
+              <el-icon><Tools /></el-icon> Actions
             </h4>
             <el-button
               type="primary"
               :disabled="!studentImageUrl || gradingStore.isLoadingGrading"
               @click="handleGradeImage"
               ><el-icon style="margin-right: 4px"><EditPen /></el-icon
-              >重新批改</el-button
+              >Re-grade</el-button
             >
             <el-button type="success" plain disabled
               ><el-icon style="margin-right: 4px"><Download /></el-icon
-              >下载报告</el-button
+              >Download Report</el-button
             >
           </div>
         </div>
-        <!-- 结果展示和编辑逻辑将在此处实现 (模块 11.5) -->
+        <!-- Result display and edit logic here (Module 11.5) -->
       </el-card>
     </el-aside>
   </el-container>
@@ -193,7 +193,7 @@
     }
 
     if (gradingStore.gradingError) {
-      const errorHtml = marked(`批改时发生错误: ${gradingStore.gradingError}`);
+      const errorHtml = marked(`Error during grading: ${gradingStore.gradingError}`);
       return DOMPurify.sanitize(errorHtml as string);
     }
 
@@ -208,10 +208,10 @@
       !gradingStore.gradingRubric
     ) {
       ElMessageBox.alert(
-        '请先完成标准答案的上传和分析，并定义评分细则。',
-        '缺少必要信息',
+        'Please upload and analyze a standard answer and define a rubric first.',
+        'Missing Required Info',
         {
-          confirmButtonText: '前往设置',
+          confirmButtonText: 'Go to Setup',
           type: 'warning',
           callback: () => {
             router.push('/standard-answer');
@@ -223,14 +223,14 @@
 
   const handleGradeImage = async () => {
     if (!gradingStore.studentAnswerImageUrl) {
-      ElMessage.error('请先上传学生答题图片。');
+      ElMessage.error('Please upload a student answer image first.');
       return;
     }
     if (
       !gradingStore.analyzedStandardAnswerText ||
       !gradingStore.gradingRubric
     ) {
-      ElMessage.error('标准答案分析或评分细则缺失，请返回上一步完成设置。');
+      ElMessage.error('Standard answer analysis or rubric is missing. Please return to the previous step to complete setup.');
       return;
     }
 
@@ -261,11 +261,11 @@
         );
         await handleGradeImage();
       } else {
-        ElMessage.error('读取学生答题图片失败');
+        ElMessage.error('Failed to read the student answer image');
       }
     };
     reader.onerror = () => {
-      ElMessage.error('读取学生答题图片时发生错误');
+      ElMessage.error('Error occurred while reading the student answer image');
     };
     reader.readAsDataURL(file);
   };
@@ -276,11 +276,11 @@
     );
     const isLt2M = rawFile.size / 1024 / 1024 < 2;
     if (!isImage) {
-      ElMessage.error('上传图片只能是 JPG/PNG/GIF 格式!');
+      ElMessage.error('Only JPG/PNG/GIF images can be uploaded!');
       return false;
     }
     if (!isLt2M) {
-      ElMessage.error('上传图片大小不能超过 2MB!');
+      ElMessage.error('Image size must be less than 2MB!');
       return false;
     }
     gradingStore.setStudentAnswerImageUrl(null);
@@ -344,15 +344,15 @@
     border-left: 1px solid var(--el-border-color-light);
   }
 
-  /* 新增样式 */
+  /* Additional styles */
   .image-uploader {
     margin-bottom: 20px;
-    width: 100%; /* 让上传组件宽度适应卡片 */
+    width: 100%; /* Make upload component fit card width */
   }
 
   .uploaded-image-preview {
     max-width: 100%;
-    max-height: calc(100% - 160px); /* 示例值，根据上传组件和其他元素高度调整 */
+    max-height: calc(100% - 160px); /* Example value, adjust based on upload component and other elements height */
     margin-top: 20px;
     border: 1px dashed var(--el-border-color);
     border-radius: 6px;
@@ -363,21 +363,21 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 150px; /* 给拖拽区域一个最小高度 */
+    min-height: 150px; /* Minimum height for drag area */
   }
 
   .el-upload__text em {
     color: var(--el-color-primary);
   }
 
-  /* 新增样式 for results sidebar content */
+  /* Additional styles for results sidebar content */
   .results-content {
     padding: 15px;
     font-size: 0.9em;
-    display: flex; /* Make this a flex container */
-    flex-direction: column; /* Stack children vertically */
-    height: 100%; /* Ensure it tries to fill the card body */
-    /* overflow: hidden; /* Let child elements (scrollbar) handle overflow */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto; /* Allow the entire results content to scroll if needed */
   }
 
   .results-content h4 {
@@ -402,7 +402,7 @@
   }
 
   .detailed-feedback .el-scrollbar {
-    padding-right: 10px; /* 避免内容紧贴滚动条 */
+    padding-right: 10px; /* Avoid content sticking to scrollbar */
     flex-grow: 1; /* Allow scrollbar to take available space within detailed-feedback */
     height: 100%; /* Try to make scrollbar fill the .detailed-feedback container */
     /* When using el-scrollbar, its internal viewport needs to be what scrolls. */
@@ -462,6 +462,6 @@
   }
 
   :deep(.el-descriptions__label) {
-    width: 80px; /* 统一描述列表的标签宽度 */
+    width: 80px; /* Unified label width for descriptions list */
   }
 </style>

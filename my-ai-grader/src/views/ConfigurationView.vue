@@ -9,10 +9,10 @@
               <span>API Configuration</span>
               <el-button
                 type="primary"
-                @click="showSaveDialog = true"
                 :icon="Plus"
+                @click="showSaveDialog = true"
               >
-                保存配置
+                Save Configuration
               </el-button>
             </div>
           </template>
@@ -52,7 +52,7 @@
                 :prefix-icon="Cpu"
               />
               <div class="model-suggestions">
-                <small>常用模型示例：</small>
+                <small>Common models:</small>
                 <el-space wrap>
                   <el-tag
                     size="small"
@@ -154,17 +154,17 @@
             />
           </div>
 
-          <!-- Saved Configurations -->
+            <!-- Saved Configurations -->
           <el-card class="saved-configs">
             <template #header>
               <div class="card-header">
                 <el-icon><Document /></el-icon>
-                <span>已保存的配置</span>
+                <span>Saved Configurations</span>
               </div>
             </template>
 
             <div v-if="savedConfigs.length === 0" class="no-configs">
-              <el-empty description="暂无保存的配置" :image-size="100" />
+              <el-empty description="No saved configurations" :image-size="100" />
             </div>
 
             <div v-else class="config-list">
@@ -183,7 +183,7 @@
                       <h4>{{ config.name }}</h4>
                       <p class="config-url">{{ config.apiUrl }}</p>
                       <p class="config-meta">
-                        模型: {{ config.modelName }} | 创建于:
+                        Model: {{ config.modelName }} | Created:
                         {{ formatDate(config.createdAt) }}
                       </p>
                     </div>
@@ -191,28 +191,28 @@
                       <el-button
                         type="primary"
                         size="small"
-                        @click="loadConfig(config)"
                         :icon="Check"
+                        @click="loadConfig(config)"
                       >
                         {{
-                          isActiveConfig(config.id) ? '当前使用' : '使用此配置'
+                          isActiveConfig(config.id) ? 'Current' : 'Use This'
                         }}
                       </el-button>
                       <el-button
                         type="warning"
                         size="small"
-                        @click="editConfig(config)"
                         :icon="Edit"
+                        @click="editConfig(config)"
                       >
-                        编辑
+                        Edit
                       </el-button>
                       <el-button
                         type="danger"
                         size="small"
-                        @click="deleteConfig(config.id)"
                         :icon="Delete"
+                        @click="deleteConfig(config.id)"
                       >
-                        删除
+                        Delete
                       </el-button>
                     </div>
                   </div>
@@ -226,23 +226,23 @@
             <template #header>
               <div class="card-header">
                 <el-icon><InfoFilled /></el-icon>
-                <span>当前配置详情</span>
+                <span>Current Configuration Details</span>
               </div>
             </template>
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="配置名称">
-                {{ activeConfig?.name || '默认配置' }}
+              <el-descriptions-item label="Configuration Name">
+                {{ activeConfig?.name || 'Default Configuration' }}
               </el-descriptions-item>
               <el-descriptions-item label="API URL">
                 {{ currentConfig.apiUrl }}
               </el-descriptions-item>
-              <el-descriptions-item label="模型">
+              <el-descriptions-item label="Model">
                 {{ currentConfig.modelName }}
               </el-descriptions-item>
-              <el-descriptions-item label="最大Token">
+              <el-descriptions-item label="Max Tokens">
                 {{ currentConfig.maxTokens }}
               </el-descriptions-item>
-              <el-descriptions-item label="超时时间">
+              <el-descriptions-item label="Timeout">
                 {{ currentConfig.timeout }}ms
               </el-descriptions-item>
             </el-descriptions>
@@ -250,33 +250,43 @@
         </el-card>
 
         <!-- Save Config Dialog -->
-        <el-dialog v-model="showSaveDialog" title="保存配置" width="400px">
+        <el-dialog
+          v-model="showSaveDialog"
+          title="Save Configuration"
+          width="400px"
+          destroy-on-close
+        >
           <el-form @submit.prevent="saveConfig">
-            <el-form-item label="配置名称">
+            <el-form-item label="Configuration Name">
               <el-input
                 v-model="configName"
-                placeholder="例如：OpenAI-GPT4, 智谱GLM等"
+                placeholder="e.g., OpenAI-GPT4, Custom API, etc."
                 maxlength="50"
                 show-word-limit
               />
             </el-form-item>
           </el-form>
           <template #footer>
-            <el-button @click="showSaveDialog = false">取消</el-button>
+            <el-button @click="showSaveDialog = false">Cancel</el-button>
             <el-button
               type="primary"
-              @click="saveConfig"
               :disabled="!configName.trim()"
+              @click="saveConfig"
             >
-              保存
+              Save
             </el-button>
           </template>
         </el-dialog>
 
         <!-- Edit Config Dialog -->
-        <el-dialog v-model="showEditDialog" title="编辑配置" width="500px">
-          <el-form @submit.prevent="updateConfig">
-            <el-form-item label="配置名称">
+        <el-dialog
+          v-model="showEditDialog"
+          title="Edit Configuration"
+          width="500px"
+          destroy-on-close
+        >
+          <el-form v-if="editingConfig" @submit.prevent="updateConfig">
+            <el-form-item label="Configuration Name">
               <el-input
                 v-model="editingConfig.name"
                 maxlength="50"
@@ -286,24 +296,24 @@
             <el-form-item label="API URL">
               <el-input v-model="editingConfig.apiUrl" />
             </el-form-item>
-            <el-form-item label="API密钥">
+            <el-form-item label="API Key">
               <el-input
                 v-model="editingConfig.apiKey"
                 type="password"
                 show-password
               />
             </el-form-item>
-            <el-form-item label="模型名称">
+            <el-form-item label="Model Name">
               <el-input v-model="editingConfig.modelName" />
             </el-form-item>
-            <el-form-item label="最大Token">
+            <el-form-item label="Max Tokens">
               <el-input-number
                 v-model="editingConfig.maxTokens"
                 :min="100"
                 :max="32000"
               />
             </el-form-item>
-            <el-form-item label="超时时间(ms)">
+            <el-form-item label="Timeout (ms)">
               <el-input-number
                 v-model="editingConfig.timeout"
                 :min="5000"
@@ -313,8 +323,8 @@
             </el-form-item>
           </el-form>
           <template #footer>
-            <el-button @click="showEditDialog = false">取消</el-button>
-            <el-button type="primary" @click="updateConfig"> 更新 </el-button>
+            <el-button @click="showEditDialog = false">Cancel</el-button>
+            <el-button type="primary" @click="updateConfig">Update</el-button>
           </template>
         </el-dialog>
       </el-main>
@@ -339,8 +349,9 @@
     Edit,
     Delete,
   } from '@element-plus/icons-vue';
+  import { useGradingStore } from '@/stores/gradingStore';
   import { useApiConfigStore } from '@/stores/apiConfigStore';
-  import { useConfigManagerStore } from '@/stores/configManagerStore';
+  import { useConfigManagerStore } from '@/stores/configManager';
   import { apiService } from '@/services/apiService';
   import type { ApiConfig } from '@/types/api';
   import { ElMessage, ElMessageBox } from 'element-plus';
@@ -352,8 +363,11 @@
   }
 
   const router = useRouter();
-  const apiConfigStore = useApiConfigStore();
+  const gradingStore = useGradingStore();
   const configManagerStore = useConfigManagerStore();
+
+  // 直接使用 apiConfigStore，避免从 gradingStore 透传导致的空值
+  const apiConfigStore = useApiConfigStore();
 
   const configForm = ref();
   const isTesting = ref(false);
@@ -362,7 +376,7 @@
   const showSaveDialog = ref(false);
   const showEditDialog = ref(false);
   const configName = ref('');
-  const editingConfig = ref({});
+  const editingConfig = ref<ApiConfig | null>(null);
 
   const formData = ref<ApiConfig>({
     apiUrl: '',
@@ -378,28 +392,28 @@
 
   const validationRules = {
     apiUrl: [
-      { required: true, message: '请输入API URL', trigger: 'blur' },
+      { required: true, message: 'Please enter API URL', trigger: 'blur' },
       {
         type: 'url',
-        message: '请输入有效的URL',
+        message: 'Please enter a valid URL',
         trigger: ['blur', 'change'],
       },
     ],
     apiKey: [
-      { required: true, message: '请输入API key', trigger: 'blur' },
+      { required: true, message: 'Please enter API key', trigger: 'blur' },
       {
         min: 10,
-        message: 'API key 过短',
+        message: 'API key is too short',
         trigger: 'blur',
       },
     ],
-    modelName: [{ required: true, message: '请选择模型', trigger: 'change' }],
+    modelName: [{ required: true, message: 'Please select a model', trigger: 'change' }],
     maxTokens: [
       {
         type: 'number',
         min: 100,
         max: 32000,
-        message: '必须在100-32000之间',
+        message: 'Must be between 100-32000',
         trigger: 'blur',
       },
     ],
@@ -408,7 +422,7 @@
         type: 'number',
         min: 5000,
         max: 120000,
-        message: '必须在5000-120000之间',
+        message: 'Must be between 5000-120000',
         trigger: 'blur',
       },
     ],
@@ -426,8 +440,8 @@
       isTesting.value = true;
       connectionStatus.value = {
         type: 'info',
-        title: '测试中...',
-        message: '正在测试API连接...',
+        title: 'Testing...',
+        message: 'Testing API connection...',
       };
 
       const result = await apiService.testConnection(formData.value);
@@ -435,21 +449,21 @@
       if (result.success) {
         connectionStatus.value = {
           type: 'success',
-          title: '成功',
-          message: 'API连接成功！',
+          title: 'Success',
+          message: 'API connection successful!',
         };
       } else {
         connectionStatus.value = {
           type: 'error',
-          title: '连接失败',
-          message: result.error || '连接API失败',
+          title: 'Connection Failed',
+          message: result.error || 'Failed to connect to API',
         };
       }
     } catch (error) {
       connectionStatus.value = {
         type: 'error',
-        title: '验证错误',
-        message: '请检查配置',
+        title: 'Validation Error',
+        message: 'Please check configuration',
       };
     } finally {
       isTesting.value = false;
@@ -458,29 +472,38 @@
 
   const handleSave = async () => {
     try {
+      console.log('Starting to save configuration, form data:', formData.value);
+      
+      // Validate form
       await configForm.value.validate();
+      console.log('Form validation passed');
 
       isSaving.value = true;
 
-      // 测试连接
-      const testResult = await apiService.testConnection(formData.value);
-      if (!testResult.success) {
-        ElMessage.error('无法保存: ' + (testResult.error || '连接测试失败'));
-        return;
-      }
-
-      // 更新当前配置
+      // Update current configuration
+      console.log('Saving API configuration...');
       apiConfigStore.saveApiConfig(formData.value);
+      console.log('API configuration saved successfully');
 
-      // 如果有活跃配置，更新它
+      // If there's an active config, update it
       if (activeConfig.value) {
+        console.log('Updating active config:', activeConfig.value.id);
         configManagerStore.updateConfig(activeConfig.value.id, formData.value);
+        console.log('Active configuration updated successfully');
       }
 
-      ElMessage.success('配置保存成功！');
+      ElMessage.success('Configuration saved successfully!');
       router.push('/standard-answer');
     } catch (error) {
-      ElMessage.error('保存配置失败');
+      console.error('Error saving configuration:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to save configuration';
+      if (error instanceof Error) {
+        errorMessage = `Failed to save configuration: ${error.message}`;
+      }
+      
+      ElMessage.error(errorMessage);
     } finally {
       isSaving.value = false;
     }
@@ -492,19 +515,13 @@
     try {
       await configForm.value.validate();
 
-      const testResult = await apiService.testConnection(formData.value);
-      if (!testResult.success) {
-        ElMessage.error('无法保存：' + (testResult.error || '连接测试失败'));
-        return;
-      }
-
       configManagerStore.addConfig(configName.value.trim(), formData.value);
-      ElMessage.success(`配置 "${configName.value}" 已保存`);
+      ElMessage.success(`Configuration "${configName.value}" saved`);
 
       showSaveDialog.value = false;
       configName.value = '';
     } catch (error) {
-      ElMessage.error('验证配置失败');
+      ElMessage.error('Configuration validation failed');
     }
   };
 
@@ -520,7 +537,7 @@
     configManagerStore.setActiveConfig(config.id);
     apiConfigStore.saveApiConfig(formData.value);
 
-    ElMessage.success(`已切换到配置 "${config.name}"`);
+    ElMessage.success(`Switched to configuration "${config.name}"`);
     connectionStatus.value = null;
   };
 
@@ -530,14 +547,20 @@
   };
 
   const updateConfig = () => {
-    if (!editingConfig.value.name?.trim()) return;
+    if (!editingConfig.value?.name?.trim()) return;
+    if (!editingConfig.value?.id) {
+      ElMessage.error('Configuration ID is missing, cannot update');
+      return;
+    }
 
+    console.log('Updating configuration:', editingConfig.value);
+    
     configManagerStore.updateConfig(
       editingConfig.value.id,
       editingConfig.value,
     );
 
-    // 如果是当前活跃配置，同步更新
+    // If it's the current active config, sync update
     if (activeConfig.value?.id === editingConfig.value.id) {
       formData.value = {
         apiUrl: editingConfig.value.apiUrl,
@@ -549,7 +572,7 @@
       apiConfigStore.saveApiConfig(formData.value);
     }
 
-    ElMessage.success('配置已更新');
+    ElMessage.success('Configuration updated');
     showEditDialog.value = false;
   };
 
@@ -557,13 +580,13 @@
     const config = configManagerStore.getConfig(id);
     if (!config) return;
 
-    ElMessageBox.confirm(`确定要删除配置 "${config.name}" 吗？`, '删除配置', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    ElMessageBox.confirm(`Are you sure you want to delete configuration "${config.name}"?`, 'Delete Configuration', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
       type: 'warning',
     }).then(() => {
       configManagerStore.deleteConfig(id);
-      ElMessage.success('配置已删除');
+      ElMessage.success('Configuration deleted');
     });
   };
 
@@ -578,11 +601,30 @@
   const handleReset = () => {
     loadCurrentConfig();
     connectionStatus.value = null;
-    ElMessage.info('配置已重置为当前值');
+    ElMessage.info('Configuration reset to current values');
+  };
+
+  // Debug function: Clear corrupted configuration data
+  const handleClearCorruptedData = () => {
+    ElMessageBox.confirm(
+      'This will clear all saved configuration data. Are you sure you want to continue?',
+      'Clear Configuration Data',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    ).then(() => {
+      configManagerStore.clearCorruptedStorage();
+      loadCurrentConfig();
+      ElMessage.success('Configuration data cleared');
+    }).catch(() => {
+      ElMessage.info('Operation cancelled');
+    });
   };
 
   onMounted(() => {
-    configManagerStore.loadConfigs();
+    configManagerStore.loadFromStorage();
     loadCurrentConfig();
   });
 </script>

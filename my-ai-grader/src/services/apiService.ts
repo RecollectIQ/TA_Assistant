@@ -10,19 +10,31 @@ import type {
   BatchGradeRequest,
   BatchGradeResponse,
 } from '@/types/grading';
+import { InputValidator } from '@/utils/validation';
+import { cacheService } from '@/services/cacheService';
+import { asyncProcessor } from '@/services/asyncProcessor';
 
 class ApiService {
-  private baseUrl = '';
-
   // Configure API settings
   async configureApi(config: ConfigureApiRequest): Promise<ApiResponse> {
     try {
+      const sanitizedConfig = InputValidator.sanitizeConfig(config);
+      const validation = InputValidator.validateApiConfig(sanitizedConfig);
+
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: validation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const response = await fetch('/api/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify(sanitizedConfig),
       });
 
       const data = await response.json();
@@ -48,15 +60,26 @@ class ApiService {
   // Test API connection
   async testConnection(config: TestConnectionRequest): Promise<ApiResponse> {
     try {
+      const sanitizedConfig = InputValidator.sanitizeConfig(config);
+      const validation = InputValidator.validateApiConfig(sanitizedConfig);
+
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: validation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const response = await fetch('/api/test_connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          apiUrl: config.apiUrl,
-          apiKey: config.apiKey,
-          modelName: config.modelName,
+          apiUrl: sanitizedConfig.apiUrl,
+          apiKey: sanitizedConfig.apiKey,
+          modelName: sanitizedConfig.modelName,
         }),
       });
 
@@ -86,19 +109,49 @@ class ApiService {
     apiConfig: ApiConfig,
   ): Promise<ApiResponse<MultiAnalyzeResponse>> {
     try {
+      const sanitizedConfig = InputValidator.sanitizeConfig(apiConfig);
+      const configValidation =
+        InputValidator.validateApiConfig(sanitizedConfig);
+      const imageValidation = InputValidator.validateImages(images);
+
+      if (!configValidation.isValid) {
+        return {
+          success: false,
+          error: configValidation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      if (!imageValidation.isValid) {
+        return {
+          success: false,
+          error: imageValidation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // Check cache first
+      const cacheKey = cacheService.generateKey('analysis', { images });
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        return {
+          success: true,
+          data: cached,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const requestData: MultiAnalyzeRequest = { images };
 
       const response = await fetch('/api/analyze_multi_answer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Key': sanitizedConfig.apiKey,
+          'X-API-Url': sanitizedConfig.apiUrl,
+          'X-Model-Name': sanitizedConfig.modelName,
         },
-        body: JSON.stringify({
-          ...requestData,
-          apiUrl: apiConfig.apiUrl,
-          apiKey: apiConfig.apiKey,
-          modelName: apiConfig.modelName,
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await response.json();
@@ -106,6 +159,9 @@ class ApiService {
       if (!response.ok) {
         throw new Error(data.error || 'Multi-image analysis failed');
       }
+
+      // Cache the result
+      cacheService.set(cacheKey, data, 2 * 60 * 60 * 1000); // 2 hours
 
       return {
         success: true,
@@ -127,17 +183,37 @@ class ApiService {
     apiConfig: ApiConfig,
   ): Promise<ApiResponse<BatchGradeResponse>> {
     try {
+      const sanitizedConfig = InputValidator.sanitizeConfig(apiConfig);
+      const configValidation =
+        InputValidator.validateApiConfig(sanitizedConfig);
+      const requestValidation =
+        InputValidator.validateBatchGradeRequest(requestData);
+
+      if (!configValidation.isValid) {
+        return {
+          success: false,
+          error: configValidation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      if (!requestValidation.isValid) {
+        return {
+          success: false,
+          error: requestValidation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const response = await fetch('/api/batch_grade', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Key': sanitizedConfig.apiKey,
+          'X-API-Url': sanitizedConfig.apiUrl,
+          'X-Model-Name': sanitizedConfig.modelName,
         },
-        body: JSON.stringify({
-          ...requestData,
-          apiUrl: apiConfig.apiUrl,
-          apiKey: apiConfig.apiKey,
-          modelName: apiConfig.modelName,
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await response.json();
@@ -168,18 +244,54 @@ class ApiService {
     apiConfig: ApiConfig,
   ): Promise<ApiResponse<{ feedback: string }>> {
     try {
+      const sanitizedConfig = InputValidator.sanitizeConfig(apiConfig);
+      const configValidation =
+        InputValidator.validateApiConfig(sanitizedConfig);
+
+      if (!configValidation.isValid) {
+        return {
+          success: false,
+          error: configValidation.errors.map((e) => e.message).join(', '),
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      if (!studentImage || typeof studentImage !== 'string') {
+        return {
+          success: false,
+          error: 'Student image is required',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      if (!rubric || typeof rubric !== 'string') {
+        return {
+          success: false,
+          error: 'Rubric is required',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      if (!standardAnswer || typeof standardAnswer !== 'string') {
+        return {
+          success: false,
+          error: 'Standard answer is required',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const response = await fetch('/api/grade', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Key': sanitizedConfig.apiKey,
+          'X-API-Url': sanitizedConfig.apiUrl,
+          'X-Model-Name': sanitizedConfig.modelName,
         },
         body: JSON.stringify({
           student_image: studentImage,
-          rubric,
-          standard_answer: standardAnswer,
-          apiUrl: apiConfig.apiUrl,
-          apiKey: apiConfig.apiKey,
-          modelName: apiConfig.modelName,
+          rubric: InputValidator.sanitizeInput(rubric),
+          standard_answer: InputValidator.sanitizeInput(standardAnswer),
         }),
       });
 
@@ -212,16 +324,71 @@ class ApiService {
     });
   }
 
+  // Async processing methods
+  async batchGradeAsync(
+    requestData: BatchGradeRequest,
+    apiConfig: ApiConfig,
+  ): Promise<string> {
+    const sanitizedConfig = InputValidator.sanitizeConfig(apiConfig);
+    const configValidation = InputValidator.validateApiConfig(sanitizedConfig);
+    const requestValidation =
+      InputValidator.validateBatchGradeRequest(requestData);
+
+    if (!configValidation.isValid || !requestValidation.isValid) {
+      throw new Error('Invalid configuration or request data');
+    }
+
+    return await asyncProcessor.processBatch(
+      requestData,
+      apiConfig,
+      this.batchGrade.bind(this),
+    );
+  }
+
+  async analyzeMultiAnswerAsync(
+    images: MultiAnalyzeRequest['images'],
+    apiConfig: ApiConfig,
+  ): Promise<string> {
+    const sanitizedConfig = InputValidator.sanitizeConfig(apiConfig);
+    const configValidation = InputValidator.validateApiConfig(sanitizedConfig);
+    const imageValidation = InputValidator.validateImages(images);
+
+    if (!configValidation.isValid || !imageValidation.isValid) {
+      throw new Error('Invalid configuration or images');
+    }
+
+    return await asyncProcessor.processAnalysis(
+      images,
+      apiConfig,
+      this.analyzeMultiAnswer.bind(this),
+    );
+  }
+
+  getProcessingStatus(taskId: string) {
+    return asyncProcessor.getTask(taskId);
+  }
+
+  getAllProcessingTasks() {
+    return asyncProcessor.getAllTasks();
+  }
+
+  cancelProcessingTask(taskId: string): boolean {
+    return asyncProcessor.cancelTask(taskId);
+  }
+
   // Get batch status
   async getBatchStatus(
     batchId: string,
     apiConfig: ApiConfig,
   ): Promise<ApiResponse> {
     try {
-      const response = await fetch(`/api/batch_status/${batchId}?apiUrl=${encodeURIComponent(apiConfig.apiUrl)}&apiKey=${encodeURIComponent(apiConfig.apiKey)}&modelName=${encodeURIComponent(apiConfig.modelName)}`, {
+      const response = await fetch(`/api/batch_status/${batchId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Key': apiConfig.apiKey,
+          'X-API-Url': apiConfig.apiUrl,
+          'X-Model-Name': apiConfig.modelName,
         },
       });
 
