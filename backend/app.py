@@ -20,6 +20,7 @@ CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 # 你需要在你的环境中设置这些变量，例如在 .env 文件中或直接在操作系统中设置
 OPENAI_COMPATIBLE_API_URL = os.getenv("OPENAI_COMPATIBLE_API_URL")
 OPENAI_COMPATIBLE_API_KEY = os.getenv("OPENAI_COMPATIBLE_API_KEY")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o")
 
 # === 占位/模拟 API 信息 (你需要替换成真实的值或从环境变量读取) ===
 # OPENAI_COMPATIBLE_API_URL = "YOUR_OPENAI_COMPATIBLE_API_ENDPOINT_HERE" # 例如 "https://api.example.com/v1/chat/completions"
@@ -34,6 +35,101 @@ def hello_world():
 def greet():
     name = "AI Grader User"
     return jsonify(message=f"Hello, {name}! This message is from your Flask backend.")
+
+@app.route('/api/analyze_multi_answer', methods=['POST'])
+def analyze_multi_answer():
+    """Analyze multiple standard answer images and return aggregated analysis and suggested rubric.
+
+    Frontend sends: { images: [{ data: base64DataUrl, order: number, name: string }, ...] }
+    Response shape (compatible with frontend expectations):
+    {
+      "analyzedText": string,
+      "suggestedRubricJson": string,
+      "imageAnalyses": [{ order, analysis, keyPoints: [] }]
+    }
+    """
+    if not OPENAI_COMPATIBLE_API_URL or not OPENAI_COMPATIBLE_API_KEY:
+        return jsonify(error="API URL or Key is not configured in the backend."), 500
+
+    try:
+        payload = request.get_json(silent=True) or {}
+        images = payload.get('images') or []
+
+        if not isinstance(images, list) or len(images) == 0:
+            return jsonify(error="images must be a non-empty array"), 400
+
+        # For now, call LLM once with a synthesized prompt that references multiple images.
+        # A more advanced implementation could iterate and combine results.
+        # Use the first image as the vision input to keep it simple but functional.
+        first_image = images[0]
+        first_image_data = first_image.get('data') if isinstance(first_image, dict) else None
+        if not first_image_data:
+            return jsonify(error="Invalid image object: missing data"), 400
+
+        analysis_prompt = (
+            "You will be given multiple images that together form a standard answer. "
+            "Summarize the key points, steps, and structure across them, and propose a JSON rubric "
+            "with criteria, maxScore per criterion, and totalScore. Return clear bullet points and a JSON rubric "
+            "enclosed in a markdown ```json block."
+        )
+
+        ai_result = call_llm_api(
+            api_url=OPENAI_COMPATIBLE_API_URL,
+            api_key=OPENAI_COMPATIBLE_API_KEY,
+            model=MODEL_NAME,
+            prompt_text=analysis_prompt,
+            image_data_url=first_image_data,
+            max_tokens=8192,
+        )
+
+        analyzed_text = None
+        suggested_rubric_json_str = None
+        if ai_result and isinstance(ai_result.get('choices'), list) and len(ai_result['choices']) > 0:
+            message = ai_result['choices'][0].get('message')
+            if message and isinstance(message.get('content'), str):
+                analyzed_text = message['content']
+                # Try to extract JSON rubric from markdown ```json block
+                match = re.search(r"```json\s*([\s\S]*?)\s*```", analyzed_text, re.DOTALL)
+                if match:
+                    extracted = match.group(1).strip()
+                    try:
+                        parsed = json.loads(extracted)
+                        suggested_rubric_json_str = json.dumps(parsed, indent=2)
+                    except json.JSONDecodeError:
+                        suggested_rubric_json_str = extracted
+
+        # Basic per-image placeholder analyses
+        image_analyses = []
+        for img in images:
+            order = (img or {}).get('order', 0)
+            name = (img or {}).get('name', f'image_{order}')
+            image_analyses.append({
+                "order": order,
+                "analysis": f"Auto analysis placeholder for {name} (order {order}).",
+                "keyPoints": ["key point 1", "key point 2"],
+            })
+
+        return jsonify({
+            "analyzedText": analyzed_text or "Multi-image analysis generated.",
+            "suggestedRubricJson": suggested_rubric_json_str or json.dumps({
+                "criteria": [],
+                "totalScore": 100
+            }, indent=2),
+            "imageAnalyses": image_analyses,
+        }), 200
+
+    except LLMServiceError as e:
+        error_response = {"error": e.message}
+        if e.details:
+            try:
+                error_response["details"] = json.loads(e.details) if isinstance(e.details, str) else e.details
+            except json.JSONDecodeError:
+                error_response["details"] = e.details
+        return jsonify(error_response), e.status_code if e.status_code else 500
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify(error=f"Unexpected error: {str(e)}"), 500
 
 @app.route('/api/grade', methods=['POST'])
 def grade_submission():
@@ -58,15 +154,13 @@ def grade_submission():
         print(f"Image data (first 100 chars): {final_image_data_url[:100]}...")
 
         # Call the llm_service
-        # Note: The model "gpt-4.1" is hardcoded here as per previous app.py logic.
-        # Consider making the model name configurable if needed.
         ai_result = call_llm_api(
             api_url=OPENAI_COMPATIBLE_API_URL,
             api_key=OPENAI_COMPATIBLE_API_KEY,
-            model="gpt-4.1", 
+            model=MODEL_NAME, 
             prompt_text=prompt_text,
             image_data_url=final_image_data_url,
-            max_tokens=8192 # Default from previous logic
+            max_tokens=8192
         )
 
         # Process the successful response
@@ -83,7 +177,7 @@ def grade_submission():
         
         if ai_content_markdown:
             # Return the extracted Markdown content directly
-            return jsonify(feedbackMarkdown=ai_content_markdown), 200
+            return jsonify(feedback=ai_content_markdown), 200
         else:
             # Handle case where markdown content couldn't be extracted as expected
             print("Error: Could not extract Markdown content from LLM response or response structure was unexpected.")
@@ -137,7 +231,7 @@ def analyze_standard_answer():
         ai_result_from_service = call_llm_api(
             api_url=OPENAI_COMPATIBLE_API_URL,
             api_key=OPENAI_COMPATIBLE_API_KEY,
-            model="gpt-4.1", # Ensure this model is supported by your API endpoint
+            model=MODEL_NAME,
             prompt_text=analysis_prompt,
             image_data_url=final_image_data_url,
             max_tokens=8192 
@@ -242,6 +336,160 @@ def test_connection():
         print(f"Connection test error: {e}")
         return jsonify(error=str(e)), 500
 
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """Get current backend configuration."""
+    try:
+        current_config = {
+            "apiUrl": OPENAI_COMPATIBLE_API_URL or "",
+            "apiKey": OPENAI_COMPATIBLE_API_KEY[:8] + "..." if OPENAI_COMPATIBLE_API_KEY else "",  # Masked for security
+            "hasApiKey": bool(OPENAI_COMPATIBLE_API_KEY)
+        }
+        return jsonify(current_config), 200
+    except Exception as e:
+        print(f"Error getting config: {e}")
+        return jsonify(error=str(e)), 500
+
+@app.route('/api/config', methods=['POST'])
+def update_config():
+    """Update backend configuration and save to .env file."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify(error="No data provided"), 400
+
+        api_url = data.get('apiUrl')
+        api_key = data.get('apiKey')
+        
+        if not api_url or not api_key:
+            return jsonify(error="Missing required parameters: apiUrl and apiKey"), 400
+
+        # Validate URL format
+        if not api_url.startswith(('http://', 'https://')):
+            return jsonify(error="Invalid API URL format"), 400
+
+        # Update .env file
+        env_path = os.path.join(os.path.dirname(__file__), '.env')
+        
+        try:
+            # Read existing .env content
+            env_content = []
+            if os.path.exists(env_path):
+                with open(env_path, 'r', encoding='utf-8') as f:
+                    env_content = f.readlines()
+            
+            # Update or add the configuration
+            updated_lines = []
+            url_updated = False
+            key_updated = False
+            
+            for line in env_content:
+                line = line.strip()
+                if line.startswith('OPENAI_COMPATIBLE_API_URL='):
+                    updated_lines.append(f'OPENAI_COMPATIBLE_API_URL="{api_url}"\n')
+                    url_updated = True
+                elif line.startswith('OPENAI_COMPATIBLE_API_KEY='):
+                    updated_lines.append(f'OPENAI_COMPATIBLE_API_KEY="{api_key}"\n')
+                    key_updated = True
+                else:
+                    updated_lines.append(line + '\n' if line else '\n')
+            
+            # Add new entries if they don't exist
+            if not url_updated:
+                updated_lines.append(f'OPENAI_COMPATIBLE_API_URL="{api_url}"\n')
+            if not key_updated:
+                updated_lines.append(f'OPENAI_COMPATIBLE_API_KEY="{api_key}"\n')
+            
+            # Write back to .env file
+            with open(env_path, 'w', encoding='utf-8') as f:
+                f.writelines(updated_lines)
+            
+            # Update global variables (for current session)
+            global OPENAI_COMPATIBLE_API_URL, OPENAI_COMPATIBLE_API_KEY
+            OPENAI_COMPATIBLE_API_URL = api_url
+            OPENAI_COMPATIBLE_API_KEY = api_key
+            
+            print(f"Configuration updated successfully: API URL set to {api_url}")
+            
+            return jsonify({
+                "success": True,
+                "message": "Configuration updated successfully",
+                "apiUrl": api_url
+            }), 200
+            
+        except IOError as e:
+            print(f"Error writing to .env file: {e}")
+            return jsonify(error="Failed to update configuration file"), 500
+            
+    except Exception as e:
+        print(f"Error updating config: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify(error=f"An unexpected error occurred: {str(e)}"), 500
+
+@app.route('/api/batch_grade', methods=['POST'])
+def batch_grade():
+    """Mock batch grading endpoint to unblock frontend integration.
+
+    Expected payload shape (from frontend):
+    {
+      "standardAnswerImages": [{ data, order }],
+      "standardAnalysis": string,
+      "rubric": string,
+      "studentSubmissions": [{ id, name, imageData }]
+    }
+
+    Returns:
+    {
+      "batchId": string,
+      "results": [{ studentId, status, feedbackMarkdown? , error? }],
+      "summary": { total, completed, errors, averageScore? }
+    }
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+        submissions = payload.get('studentSubmissions') or []
+
+        if not isinstance(submissions, list):
+            return jsonify(error="studentSubmissions must be an array"), 400
+
+        batch_id = f"batch_{int(__import__('time').time()*1000)}"
+        results = []
+        completed = 0
+        errors = 0
+
+        # Simple mock: mark all as completed with a placeholder markdown
+        for sub in submissions:
+            student_id = (sub or {}).get('id', 'unknown')
+            feedback_md = (
+                f"# Feedback for {student_id}\n\n"
+                f"- Overall: Looks good.\n"
+                f"- Suggested improvements: Add more details in step 2.\n"
+            )
+            results.append({
+                "studentId": student_id,
+                "status": "completed",
+                "feedbackMarkdown": feedback_md,
+            })
+            completed += 1
+
+        summary = {
+            "total": len(submissions),
+            "completed": completed,
+            "errors": errors,
+            "averageScore": None,
+        }
+
+        return jsonify({
+            "batchId": batch_id,
+            "results": results,
+            "summary": summary,
+        }), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify(error=f"Unexpected error: {str(e)}"), 500
+
 # Explicitly print registered routes for debugging
 # This should be placed after all route definitions and before the app.run() call if __name__ == '__main__'
 print("\n--- Debug: Checking registered routes before app.run() ---")
@@ -256,5 +504,5 @@ if __name__ == '__main__':
     # 确保 host='0.0.0.0'以便从外部（例如前端容器或局域网）访问，尽管对于 localhost 可能不是必需的
     # 但有时有助于解决一些本地网络解析问题。
     # The debug prints above will execute when this script is run directly OR when loaded by Flask CLI for FLASK_APP=backend.app
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5001) 
     # Force Load

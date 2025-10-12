@@ -1,71 +1,45 @@
-# Node.js / Vite (Frontend - my-ai-grader)
-my-ai-grader/node_modules/
-my-ai-grader/dist/
-my-ai-grader/.DS_Store
-my-ai-grader/.env
-my-ai-grader/.env.*
-my-ai-grader/coverage/
-my-ai-grader/node_modules/.tmp
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+.coverage
 
-# Node.js (Project Root - if any, less common for this structure)
+# Node.js
 node_modules/
-.DS_Store
-.env
-.env.*
-coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+dist/
+*.local
 
-# Python / Flask (Backend)
-backend/venv/
-backend/.venv/
-backend/activate_this.py
-backend/__pycache__/
-backend/*.py[cod]
-backend/.env
-backend/.DS_Store
-backend/instance/
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# Editor & OS specific
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 .DS_Store
 
 # Logs
-logs
+logs/
 *.log
 
-# Temporary files
-*.tmp
-*.patch
-*.diff
-
-# Cursor related (usually handled by global gitignore, but can be explicit)
-# .cursor/
-# Python
-__pycache__/
-*.pyc
-*.py[cod]
-*.class
-
-# Virtualenv
-venv/
-
-# Environment variables
-*.env
-.env
-.env.*
-
-# Node
-node_modules/
+# Build outputs
+build/
 dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# IDE / OS specific
-.vscode/
+# OS
 .DS_Store
+Thumbs.db
