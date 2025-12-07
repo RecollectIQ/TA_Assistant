@@ -63,7 +63,9 @@
           drag
         >
           <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">Drag file here or <em>click to upload</em></div>
+          <div class="el-upload__text">
+            Drag file here or <em>click to upload</em>
+          </div>
           <template #tip>
             <div class="el-upload__tip">
               Only jpg/png files are allowed, up to 2MB
@@ -85,8 +87,8 @@
         <template #header>
           <div class="card-header">
             <span
-              ><el-icon style="margin-right: 4px"><List /></el-icon
-              >Grading Sidebar</span
+              ><el-icon style="margin-right: 4px"><List /></el-icon>Grading
+              Sidebar</span
             >
           </div>
         </template>
@@ -127,8 +129,8 @@
               >Re-grade</el-button
             >
             <el-button type="success" plain disabled
-              ><el-icon style="margin-right: 4px"><Download /></el-icon
-              >Download Report</el-button
+              ><el-icon style="margin-right: 4px"><Download /></el-icon>Download
+              Report</el-button
             >
           </div>
         </div>
@@ -158,8 +160,14 @@
     Download,
   } from '@element-plus/icons-vue';
   import { useGradingStore } from '@/stores/gradingStore';
-  import { marked } from 'marked';
+  import { marked, Marked } from 'marked';
   import DOMPurify from 'dompurify';
+
+  // Configure marked for better rendering
+  const markedInstance = new Marked({
+    breaks: true,  // Convert \n to <br>
+    gfm: true,     // GitHub Flavored Markdown
+  });
 
   const gradingStore = useGradingStore();
   const router = useRouter();
@@ -179,21 +187,33 @@
       markdownText &&
       !markdownText.startsWith('Error during grading:')
     ) {
-      const cleanedMarkdown = markdownText.replace(/\\n/g, '\n');
-      const rawHtml = marked(cleanedMarkdown);
-      return DOMPurify.sanitize(rawHtml as string);
+      // Clean up escaped newlines and render markdown
+      const cleanedMarkdown = markdownText
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\*\*/g, '**');  // Ensure bold syntax is preserved
+      
+      try {
+        const rawHtml = markedInstance.parse(cleanedMarkdown);
+        return DOMPurify.sanitize(rawHtml as string);
+      } catch (e) {
+        console.error('Markdown parsing error:', e);
+        return `<pre>${cleanedMarkdown}</pre>`;
+      }
     }
 
     if (
       typeof markdownText === 'string' &&
       markdownText.startsWith('Error during grading:')
     ) {
-      const errorHtml = marked(`\`\`\`text\n${markdownText}\n\`\`\``);
+      const errorHtml = markedInstance.parse(`\`\`\`text\n${markdownText}\n\`\`\``);
       return DOMPurify.sanitize(errorHtml as string);
     }
 
     if (gradingStore.gradingError) {
-      const errorHtml = marked(`Error during grading: ${gradingStore.gradingError}`);
+      const errorHtml = markedInstance.parse(
+        `**Error during grading:** ${gradingStore.gradingError}`,
+      );
       return DOMPurify.sanitize(errorHtml as string);
     }
 
@@ -230,7 +250,9 @@
       !gradingStore.analyzedStandardAnswerText ||
       !gradingStore.gradingRubric
     ) {
-      ElMessage.error('Standard answer analysis or rubric is missing. Please return to the previous step to complete setup.');
+      ElMessage.error(
+        'Standard answer analysis or rubric is missing. Please return to the previous step to complete setup.',
+      );
       return;
     }
 
@@ -352,7 +374,9 @@
 
   .uploaded-image-preview {
     max-width: 100%;
-    max-height: calc(100% - 160px); /* Example value, adjust based on upload component and other elements height */
+    max-height: calc(
+      100% - 160px
+    ); /* Example value, adjust based on upload component and other elements height */
     margin-top: 20px;
     border: 1px dashed var(--el-border-color);
     border-radius: 6px;
@@ -463,5 +487,84 @@
 
   :deep(.el-descriptions__label) {
     width: 80px; /* Unified label width for descriptions list */
+  }
+
+  /* Enhanced Markdown Content Styles */
+  .markdown-content :deep(h2) {
+    color: var(--el-color-primary);
+    font-size: 1.3em;
+    border-bottom: 2px solid var(--el-color-primary-light-5);
+    padding-bottom: 8px;
+    margin-top: 1.5em;
+  }
+
+  .markdown-content :deep(h3) {
+    color: var(--el-color-info-dark-2);
+    font-size: 1.15em;
+    border-left: 3px solid var(--el-color-primary);
+    padding-left: 10px;
+  }
+
+  .markdown-content :deep(h4) {
+    color: var(--el-text-color-primary);
+    font-size: 1.05em;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--el-fill-color-light), transparent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-top: 1.2em;
+  }
+
+  .markdown-content :deep(strong) {
+    color: var(--el-color-primary-dark-2);
+    font-weight: 600;
+  }
+
+  .markdown-content :deep(ul) {
+    list-style-type: none;
+    padding-left: 0;
+  }
+
+  .markdown-content :deep(ul li) {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+
+  .markdown-content :deep(ul li::before) {
+    content: '•';
+    position: absolute;
+    left: 4px;
+    color: var(--el-color-primary);
+    font-weight: bold;
+  }
+
+  .markdown-content :deep(ul ul li::before) {
+    content: '◦';
+    color: var(--el-color-info);
+  }
+
+  /* Nested list indentation */
+  .markdown-content :deep(ul ul) {
+    margin-left: 15px;
+    margin-top: 5px;
+    border-left: 2px solid var(--el-border-color-lighter);
+    padding-left: 10px;
+  }
+
+  /* Feedback sections with visual hierarchy */
+  .markdown-content :deep(p) {
+    margin-bottom: 0.8em;
+    line-height: 1.7;
+    color: var(--el-text-color-regular);
+  }
+
+  /* Score highlighting */
+  .markdown-content :deep(p:has(strong:first-child)) {
+    background: var(--el-fill-color-lighter);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 4px solid var(--el-color-success);
   }
 </style>

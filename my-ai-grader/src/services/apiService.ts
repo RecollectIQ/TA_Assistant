@@ -29,7 +29,7 @@ class ApiService {
         };
       }
 
-      const response = await fetch('/api/configure', {
+      const response = await fetch('/api/config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

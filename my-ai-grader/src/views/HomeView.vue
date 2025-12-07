@@ -9,7 +9,9 @@
       </div>
     </template>
     <el-empty description="No content yet, please select an action">
-      <el-button type="primary" @click="goToStandardAnswer">Start Grading</el-button>
+      <el-button type="primary" @click="goToStandardAnswer"
+        >Start Grading</el-button
+      >
       <el-button @click="goToProfiles">Manage Configuration</el-button>
     </el-empty>
 

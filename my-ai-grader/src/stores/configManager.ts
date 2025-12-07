@@ -109,19 +109,52 @@ export const useConfigManagerStore = defineStore('configManager', () => {
     saveToStorage();
   };
 
+  // Sync configuration to backend
+  const syncToBackend = async (config: ApiConfig): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          apiUrl: config.apiUrl,
+          apiKey: config.apiKey,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('配置已同步到后端');
+        return true;
+      } else {
+        console.warn('同步到后端失败');
+        return false;
+      }
+    } catch (error) {
+      console.error('后端同步失败:', error);
+      return false;
+    }
+  };
+
   // 设置活跃配置
-  const setActiveConfig = (id: string) => {
+  const setActiveConfig = async (id: string): Promise<boolean> => {
     // 确保 configs.value 是数组
     if (!Array.isArray(configs.value)) {
       console.error('configs.value 不是数组，重置为空数组');
       configs.value = [];
-      return;
+      return false;
     }
 
-    if (configs.value.find((c) => c.id === id)) {
+    const config = configs.value.find((c) => c.id === id);
+    if (config) {
       activeConfigId.value = id;
       saveToStorage();
+
+      // Sync to backend
+      await syncToBackend(config);
+      return true;
     }
+    return false;
   };
 
   // 获取配置
@@ -163,5 +196,6 @@ export const useConfigManagerStore = defineStore('configManager', () => {
     getConfig,
     loadFromStorage,
     clearCorruptedStorage,
+    syncToBackend,
   };
 });

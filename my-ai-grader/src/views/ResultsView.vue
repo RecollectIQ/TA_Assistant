@@ -381,7 +381,7 @@
     TrendCharts,
     Refresh,
     Download,
-    Search,
+    Search as _Search,
   } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import BaseCard from '@/components/common/BaseCard.vue';
@@ -521,13 +521,17 @@
     if (scoreChart) {
       try {
         scoreChart.destroy();
-      } catch {}
+      } catch (_e) {
+        /* ignore */
+      }
       scoreChart = null;
     }
     if (trendChart) {
       try {
         trendChart.destroy();
-      } catch {}
+      } catch (_e) {
+        /* ignore */
+      }
       trendChart = null;
     }
 
@@ -738,13 +742,17 @@
     if (scoreChart) {
       try {
         scoreChart.destroy();
-      } catch {}
+      } catch (_e) {
+        /* ignore */
+      }
       scoreChart = null;
     }
     if (trendChart) {
       try {
         trendChart.destroy();
-      } catch {}
+      } catch (_e) {
+        /* ignore */
+      }
       trendChart = null;
     }
   });

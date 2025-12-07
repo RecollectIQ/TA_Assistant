@@ -26,11 +26,11 @@
           :disabled="gradingStore.isLoadingAnalysis"
         >
           <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
+          <div class="el-upload__text">
+            Drop file here or <em>click to upload</em>
+          </div>
           <template #tip>
-            <div class="el-upload__tip">
-              Only jpg/png/gif files, max 2MB
-            </div>
+            <div class="el-upload__tip">Only jpg/png/gif files, max 2MB</div>
           </template>
         </el-upload>
         <div
@@ -109,7 +109,8 @@
           style="margin-top: 10px; font-size: 0.9em; color: #909399"
         >
           <p>
-            Tip: AI-suggested rubric has been filled in. You can edit directly, or
+            Tip: AI-suggested rubric has been filled in. You can edit directly,
+            or
             <el-button type="text" @click="restoreSuggestedRubric"
               >Restore AI Suggestion</el-button
             >

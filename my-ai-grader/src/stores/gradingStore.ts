@@ -171,12 +171,14 @@ export const useGradingStore = defineStore('grading', () => {
       }
 
       const data = await response.json();
-      standardAnswerText.value = data.analyzedText || 'No text content received';
+      standardAnswerText.value =
+        data.analyzedText || 'No text content received';
       suggestedRubric.value = data.suggestedRubricJson || '';
 
       ElMessage.success('Standard answer analysis completed');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Analysis failed';
       standardAnalysisError.value = errorMessage;
       ElMessage.error(errorMessage);
     } finally {
@@ -230,7 +232,8 @@ export const useGradingStore = defineStore('grading', () => {
 
       ElMessage.success('Multi-image standard answer analysis completed');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Analysis failed';
       standardAnalysisError.value = errorMessage;
       ElMessage.error(errorMessage);
     } finally {
@@ -302,7 +305,8 @@ export const useGradingStore = defineStore('grading', () => {
       const data = await response.json();
       singleGradingResult.value = data.feedback;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Grading failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Grading failed';
       singleGradingError.value = errorMessage;
     } finally {
       isLoadingSingle.value = false;
@@ -478,7 +482,11 @@ export const useGradingStore = defineStore('grading', () => {
     rubric: string,
     standardAnswerText: string,
   ) => {
-    return gradeSingleStudentAnswer(studentImageUrl, rubric, standardAnswerText);
+    return gradeSingleStudentAnswer(
+      studentImageUrl,
+      rubric,
+      standardAnswerText,
+    );
   };
 
   // 重置所有状态

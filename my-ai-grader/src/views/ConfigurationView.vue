@@ -154,7 +154,7 @@
             />
           </div>
 
-            <!-- Saved Configurations -->
+          <!-- Saved Configurations -->
           <el-card class="saved-configs">
             <template #header>
               <div class="card-header">
@@ -164,7 +164,10 @@
             </template>
 
             <div v-if="savedConfigs.length === 0" class="no-configs">
-              <el-empty description="No saved configurations" :image-size="100" />
+              <el-empty
+                description="No saved configurations"
+                :image-size="100"
+              />
             </div>
 
             <div v-else class="config-list">
@@ -194,9 +197,7 @@
                         :icon="Check"
                         @click="loadConfig(config)"
                       >
-                        {{
-                          isActiveConfig(config.id) ? 'Current' : 'Use This'
-                        }}
+                        {{ isActiveConfig(config.id) ? 'Current' : 'Use This' }}
                       </el-button>
                       <el-button
                         type="warning"
@@ -363,7 +364,7 @@
   }
 
   const router = useRouter();
-  const gradingStore = useGradingStore();
+  const _gradingStore = useGradingStore();
   const configManagerStore = useConfigManagerStore();
 
   // 直接使用 apiConfigStore，避免从 gradingStore 透传导致的空值
@@ -407,7 +408,9 @@
         trigger: 'blur',
       },
     ],
-    modelName: [{ required: true, message: 'Please select a model', trigger: 'change' }],
+    modelName: [
+      { required: true, message: 'Please select a model', trigger: 'change' },
+    ],
     maxTokens: [
       {
         type: 'number',
@@ -473,7 +476,7 @@
   const handleSave = async () => {
     try {
       console.log('Starting to save configuration, form data:', formData.value);
-      
+
       // Validate form
       await configForm.value.validate();
       console.log('Form validation passed');
@@ -496,13 +499,13 @@
       router.push('/standard-answer');
     } catch (error) {
       console.error('Error saving configuration:', error);
-      
+
       // Provide more specific error messages
       let errorMessage = 'Failed to save configuration';
       if (error instanceof Error) {
         errorMessage = `Failed to save configuration: ${error.message}`;
       }
-      
+
       ElMessage.error(errorMessage);
     } finally {
       isSaving.value = false;
@@ -554,7 +557,7 @@
     }
 
     console.log('Updating configuration:', editingConfig.value);
-    
+
     configManagerStore.updateConfig(
       editingConfig.value.id,
       editingConfig.value,
@@ -580,11 +583,15 @@
     const config = configManagerStore.getConfig(id);
     if (!config) return;
 
-    ElMessageBox.confirm(`Are you sure you want to delete configuration "${config.name}"?`, 'Delete Configuration', {
-      confirmButtonText: 'Confirm',
-      cancelButtonText: 'Cancel',
-      type: 'warning',
-    }).then(() => {
+    ElMessageBox.confirm(
+      `Are you sure you want to delete configuration "${config.name}"?`,
+      'Delete Configuration',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      },
+    ).then(() => {
       configManagerStore.deleteConfig(id);
       ElMessage.success('Configuration deleted');
     });
@@ -605,7 +612,7 @@
   };
 
   // Debug function: Clear corrupted configuration data
-  const handleClearCorruptedData = () => {
+  const _handleClearCorruptedData = () => {
     ElMessageBox.confirm(
       'This will clear all saved configuration data. Are you sure you want to continue?',
       'Clear Configuration Data',
@@ -613,14 +620,16 @@
         confirmButtonText: 'Confirm',
         cancelButtonText: 'Cancel',
         type: 'warning',
-      }
-    ).then(() => {
-      configManagerStore.clearCorruptedStorage();
-      loadCurrentConfig();
-      ElMessage.success('Configuration data cleared');
-    }).catch(() => {
-      ElMessage.info('Operation cancelled');
-    });
+      },
+    )
+      .then(() => {
+        configManagerStore.clearCorruptedStorage();
+        loadCurrentConfig();
+        ElMessage.success('Configuration data cleared');
+      })
+      .catch(() => {
+        ElMessage.info('Operation cancelled');
+      });
   };
 
   onMounted(() => {

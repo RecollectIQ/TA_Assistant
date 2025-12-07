@@ -50,15 +50,42 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
     return null;
   };
 
-  const saveApiConfig = (config: ApiConfig): void => {
+  const saveApiConfig = async (config: ApiConfig): Promise<boolean> => {
     try {
       console.log('保存API配置:', config);
+
+      // Save to localStorage first
       apiConfig.value = config;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
       isConfigured.value = true;
       connectionStatus.value = 'untested';
       lastTestError.value = null;
+
+      // Sync to backend
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            apiUrl: config.apiUrl,
+            apiKey: config.apiKey,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('API配置已同步到后端');
+        } else {
+          console.warn('同步到后端失败，但本地保存成功');
+        }
+      } catch (syncError) {
+        console.warn('后端同步失败:', syncError);
+        // Don't fail the whole operation if backend sync fails
+      }
+
       console.log('API配置保存成功');
+      return true;
     } catch (error) {
       console.error('Failed to save API config to localStorage:', error);
       throw new Error(

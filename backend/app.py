@@ -490,19 +490,19 @@ def batch_grade():
         traceback.print_exc()
         return jsonify(error=f"Unexpected error: {str(e)}"), 500
 
-# Explicitly print registered routes for debugging
-# This should be placed after all route definitions and before the app.run() call if __name__ == '__main__'
-print("\n--- Debug: Checking registered routes before app.run() ---")
-with app.app_context():
-    print("Explicitly Registered Routes by app.url_map:")
-    rules = sorted(app.url_map.iter_rules(), key=lambda r: str(r))
-    for rule in rules:
-        print(f"  Endpoint: {rule.endpoint}, Methods: {sorted(list(rule.methods))}, Path: {str(rule)}")
-    print("--- End of Debug: Registered routes ---\n")
+# Debug route listing - only run when script is executed directly, not imported
+# Commented out to avoid I/O errors when running in background
+# print("\n--- Debug: Checking registered routes before app.run() ---")
+# with app.app_context():
+#     print("Explicitly Registered Routes by app.url_map:")
+#     rules = sorted(app.url_map.iter_rules(), key=lambda r: str(r))
+#     for rule in rules:
+#         print(f"  Endpoint: {rule.endpoint}, Methods: {sorted(list(rule.methods))}, Path: {str(rule)}")
+#     print("--- End of Debug: Registered routes ---\n")
 
 if __name__ == '__main__':
-    # 确保 host='0.0.0.0'以便从外部（例如前端容器或局域网）访问，尽管对于 localhost 可能不是必需的
-    # 但有时有助于解决一些本地网络解析问题。
-    # The debug prints above will execute when this script is run directly OR when loaded by Flask CLI for FLASK_APP=backend.app
-    app.run(debug=True, host='0.0.0.0', port=5001) 
-    # Force Load
+    # Use debug=False when running in background to avoid I/O issues with print statements
+    # Set use_reloader=False to prevent duplicate process spawning
+    import os
+    is_background = os.environ.get('FLASK_BACKGROUND', 'false').lower() == 'true'
+    app.run(debug=not is_background, host='0.0.0.0', port=5001, use_reloader=not is_background)

@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev)",
+      "Bash(npm run format)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run build)",
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npm run lint)",
+      "Bash(npm run)",
+      "Bash(touch:*)",
+      "Bash(git rm:*)",
+      "Bash(gemini --yolo:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(curl:*)",
+      "Bash(npm run lint:*)"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  }
+}
